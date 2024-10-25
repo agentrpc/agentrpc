@@ -19,7 +19,7 @@ To install the Inferable Go Client, use the following command:
 go get github.com/inferablehq/inferable/sdk-go
 ```
 
-## Usage
+## Quick Start
 
 ### Initializing Inferable
 
