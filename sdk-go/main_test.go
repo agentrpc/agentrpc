@@ -3,7 +3,7 @@ package inferable
 import (
 	"testing"
 
-	"github.com/inferablehq/inferable-go/internal/util"
+	"github.com/inferablehq/inferable/sdk-go/internal/util"
 )
 
 type EchoInput struct {

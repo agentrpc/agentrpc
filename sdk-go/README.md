@@ -4,10 +4,10 @@
 
 # Go SDK for Inferable
 
-[![Go Reference](https://pkg.go.dev/badge/github.com/inferablehq/inferable-go.svg)](https://pkg.go.dev/github.com/inferablehq/inferable-go)
+[![Go Reference](https://pkg.go.dev/badge/github.com/inferablehq/inferable/sdk-go.svg)](https://pkg.go.dev/github.com/inferablehq/inferable/sdk-go)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Documentation](https://img.shields.io/badge/docs-inferable.ai-brightgreen)](https://docs.inferable.ai/)
-[![Go Report Card](https://goreportcard.com/badge/github.com/inferablehq/inferable-go)](https://goreportcard.com/report/github.com/inferablehq/inferable-go)
+[![Go Report Card](https://goreportcard.com/badge/github.com/inferablehq/inferable/sdk-go)](https://goreportcard.com/report/github.com/inferablehq/inferable/sdk-go)
 
 Inferable Go Client is a Go package that provides a client for interacting with the Inferable API. It allows you to register your go functions against the Inferable control plane.
 
@@ -16,7 +16,7 @@ Inferable Go Client is a Go package that provides a client for interacting with 
 To install the Inferable Go Client, use the following command:
 
 ```
-go get github.com/inferablehq/inferable-go
+go get github.com/inferablehq/inferable/sdk-go
 ```
 
 ## Usage
@@ -26,7 +26,7 @@ go get github.com/inferablehq/inferable-go
 To create a new Inferable client, use the `New` function:
 
 ```go
-import "github.com/inferablehq/inferable-go/inferable"
+import "github.com/inferablehq/inferable/sdk-go/inferable"
 
 client, err := inferable.New("your-api-secret", "https://api.inferable.ai")
 
@@ -69,7 +69,7 @@ Here's an example to illustrate this:
 
 ```go
 import (
-    "github.com/inferablehq/inferable-go/inferable"
+    "github.com/inferablehq/inferable/sdk-go/inferable"
     "time"
 )
 
@@ -154,11 +154,10 @@ The following code will create an [Inferable run](https://docs.inferable.ai/page
 
 > Runs can also be triggered via the [API](https://docs.inferable.ai/pages/invoking-a-run-api), [CLI](https://www.npmjs.com/package/@inferable/cli) or [playground UI](https://app.inferable.ai/).
 
-
 ## Contributing
 
 Contributions to the Inferable Go Client are welcome. Please ensure that your code adheres to the existing style and includes appropriate tests.
 
 ## Support
 
-For support or questions, please [create an issue in the repository](https://github.com/inferablehq/inferable-go/issues).
+For support or questions, please [create an issue in the repository](https://github.com/inferablehq/inferable/sdk-go/issues).

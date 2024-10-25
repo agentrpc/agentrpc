@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"reflect"
 
-	"github.com/inferablehq/inferable-go/internal/client"
-	"github.com/inferablehq/inferable-go/internal/util"
+	"github.com/inferablehq/inferable/sdk-go/internal/client"
+	"github.com/inferablehq/inferable/sdk-go/internal/util"
 )
 
 // Version of the inferable package
@@ -28,7 +28,7 @@ type Inferable struct {
 	apiSecret        string
 	functionRegistry functionRegistry
 	machineID        string
-  clusterID        string
+	clusterID        string
 	Default          *service
 }
 
@@ -36,43 +36,43 @@ type InferableOptions struct {
 	APIEndpoint string
 	APISecret   string
 	MachineID   string
-  ClusterID   string
+	ClusterID   string
 }
 
 // Input struct passed to a Run's result handler
 type RunResultHandlerInput struct {
-  Status string `json:"status"`
-  RunId string `json:"runId"`
-  Result interface{} `json:"result"`
-  Summary string `json:"summary"`
-  Metadata interface{} `json:"metadata"`
+	Status   string      `json:"status"`
+	RunId    string      `json:"runId"`
+	Result   interface{} `json:"result"`
+	Summary  string      `json:"summary"`
+	Metadata interface{} `json:"metadata"`
 }
 
 type RunResult struct {
-  Handler   *FunctionHandle
-  Schema    interface{}
+	Handler *FunctionHandle
+	Schema  interface{}
 }
 
 type RunTemplate struct {
-  ID         string
-  Input      map[string]interface{}
+	ID    string
+	Input map[string]interface{}
 }
 
 type Run struct {
-  Functions   []*FunctionHandle
-  Message     string
-  Result      *RunResult
-  Metadata    map[string]string
-  Template    *RunTemplate
+	Functions []*FunctionHandle
+	Message   string
+	Result    *RunResult
+	Metadata  map[string]string
+	Template  *RunTemplate
 }
 
 type runHandle struct {
-  ID   string
+	ID string
 }
 
 type templateHandle struct {
-  ID   string
-  Run  func(input *Run) (*runHandle, error)
+	ID  string
+	Run func(input *Run) (*runHandle, error)
 }
 
 func New(options InferableOptions) (*Inferable, error) {
@@ -89,15 +89,14 @@ func New(options InferableOptions) (*Inferable, error) {
 
 	machineID := options.MachineID
 	if machineID == "" {
-    machineID = util.GenerateMachineID(8)
+		machineID = util.GenerateMachineID(8)
 	}
-
 
 	inferable := &Inferable{
 		client:           client,
 		apiEndpoint:      options.APIEndpoint,
 		apiSecret:        options.APISecret,
-    clusterID:        options.ClusterID,
+		clusterID:        options.ClusterID,
 		functionRegistry: functionRegistry{services: make(map[string]*service)},
 		machineID:        machineID,
 	}
@@ -125,43 +124,40 @@ func (i *Inferable) RegisterService(serviceName string) (*service, error) {
 }
 
 func (i *Inferable) CreateRun(input *Run) (*runHandle, error) {
-  if i.clusterID == "" {
-    return nil, fmt.Errorf("cluster ID must be provided to manage runs")
-  }
-
-  var attachedFunctions []string
-  for _, fn := range input.Functions {
-    attachedFunctions = append(attachedFunctions, fmt.Sprintf("%s_%s", fn.Service, fn.Function))
-  }
-
-
-	payload := client.CreateRunInput{
-    Message: input.Message,
-    AttachedFunctions: attachedFunctions,
-    Metadata: input.Metadata,
+	if i.clusterID == "" {
+		return nil, fmt.Errorf("cluster ID must be provided to manage runs")
 	}
 
-  if (input.Template != nil) {
-    payload.Template = &client.CreateRunTemplateInput{
-      Input: input.Template.Input,
-      ID: input.Template.ID,
-    }
-  }
+	var attachedFunctions []string
+	for _, fn := range input.Functions {
+		attachedFunctions = append(attachedFunctions, fmt.Sprintf("%s_%s", fn.Service, fn.Function))
+	}
 
-  if (input.Result != nil) {
-    payload.Result = &client.CreateRunResultInput{
-    }
-    if (input.Result.Handler != nil) {
-      payload.Result.Handler = &client.CreateRunResultHandlerInput{
-        Service: input.Result.Handler.Service,
-        Function: input.Result.Handler.Function,
-      }
-    }
-    if (input.Result.Schema != nil) {
-      payload.Result.Schema = input.Result.Schema
-    }
-  }
+	payload := client.CreateRunInput{
+		Message:           input.Message,
+		AttachedFunctions: attachedFunctions,
+		Metadata:          input.Metadata,
+	}
 
+	if input.Template != nil {
+		payload.Template = &client.CreateRunTemplateInput{
+			Input: input.Template.Input,
+			ID:    input.Template.ID,
+		}
+	}
+
+	if input.Result != nil {
+		payload.Result = &client.CreateRunResultInput{}
+		if input.Result.Handler != nil {
+			payload.Result.Handler = &client.CreateRunResultHandlerInput{
+				Service:  input.Result.Handler.Service,
+				Function: input.Result.Handler.Function,
+			}
+		}
+		if input.Result.Schema != nil {
+			payload.Result.Schema = input.Result.Schema
+		}
+	}
 
 	// Marshal the payload to JSON
 	jsonPayload, err := json.Marshal(payload)
@@ -200,13 +196,13 @@ func (i *Inferable) CreateRun(input *Run) (*runHandle, error) {
 		return nil, fmt.Errorf("failed to parse run response: %v", err)
 	}
 
-  return &runHandle{ID: response.ID}, nil
+	return &runHandle{ID: response.ID}, nil
 }
 
 func (i *Inferable) GetTemplate(id string) (*templateHandle, error) {
-  if i.clusterID == "" {
-    return nil, fmt.Errorf("cluster ID must be provided to manage runs")
-  }
+	if i.clusterID == "" {
+		return nil, fmt.Errorf("cluster ID must be provided to manage runs")
+	}
 
 	// Prepare headers
 	headers := map[string]string{
@@ -238,26 +234,26 @@ func (i *Inferable) GetTemplate(id string) (*templateHandle, error) {
 		return nil, fmt.Errorf("failed to parse template response: %v", err)
 	}
 
-  return &templateHandle{
-    ID: response.ID,
-    Run: func(input *Run) (*runHandle, error) {
-      // CLone the input
-      inputCopy := *input
+	return &templateHandle{
+		ID: response.ID,
+		Run: func(input *Run) (*runHandle, error) {
+			// CLone the input
+			inputCopy := *input
 
-      // Set the template ID
-      if inputCopy.Template == nil {
-        inputCopy.Template = &RunTemplate{
-          ID: response.ID,
-        }
-      } else {
-        inputCopy.Template.ID = response.ID
-      }
+			// Set the template ID
+			if inputCopy.Template == nil {
+				inputCopy.Template = &RunTemplate{
+					ID: response.ID,
+				}
+			} else {
+				inputCopy.Template.ID = response.ID
+			}
 
-      fmt.Println(inputCopy)
+			fmt.Println(inputCopy)
 
-      return i.CreateRun(&inputCopy)
-    },
-  }, nil
+			return i.CreateRun(&inputCopy)
+		},
+	}, nil
 }
 
 func (i *Inferable) callFunc(serviceName, funcName string, args ...interface{}) ([]reflect.Value, error) {
@@ -323,7 +319,7 @@ func (i *Inferable) fetchData(options client.FetchDataOptions) ([]byte, http.Hea
 		options.Headers["Content-Type"] = "application/json"
 	}
 
-	data, headers, err, status:= i.client.FetchData(options)
+	data, headers, err, status := i.client.FetchData(options)
 	return []byte(data), headers, err, status
 }
 

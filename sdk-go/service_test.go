@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/inferablehq/inferable-go/internal/util"
+	"github.com/inferablehq/inferable/sdk-go/internal/util"
 )
 
 func TestRegisterFunc(t *testing.T) {

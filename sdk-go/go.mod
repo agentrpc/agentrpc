@@ -1,4 +1,4 @@
-module github.com/inferablehq/inferable-go
+module github.com/inferablehq/inferable/sdk-go
 
 go 1.22
 

@@ -12,7 +12,7 @@ import (
 
 	"github.com/invopop/jsonschema"
 
-	"github.com/inferablehq/inferable-go/internal/client"
+	"github.com/inferablehq/inferable/sdk-go/internal/client"
 )
 
 const (
@@ -55,14 +55,14 @@ type callResult struct {
 }
 
 type FunctionHandle struct {
-  Service  string
-  Function string
+	Service  string
+	Function string
 }
 
 func (s *service) RegisterFunc(fn Function) (*FunctionHandle, error) {
-  if s.isPolling() {
-    return nil, fmt.Errorf("functions must be registered before starting the service.")
-  }
+	if s.isPolling() {
+		return nil, fmt.Errorf("functions must be registered before starting the service.")
+	}
 
 	if _, exists := s.Functions[fn.Name]; exists {
 		return nil, fmt.Errorf("function with name '%s' already registered for service '%s'", fn.Name, s.Name)
@@ -249,9 +249,9 @@ func (s *service) poll() error {
 
 	result, respHeaders, err, status := s.inferable.fetchData(options)
 
-  if status == 410 {
-    s.registerMachine()
-  }
+	if status == 410 {
+		s.registerMachine()
+	}
 
 	if err != nil {
 		return fmt.Errorf("failed to poll calls: %v", err)
@@ -292,7 +292,7 @@ func (s *service) handleMessage(msg callMessage) error {
 	fn, ok := s.Functions[msg.Function]
 	if !ok {
 		log.Printf("Received call for unknown function: %s", msg.Function)
-    return nil
+		return nil
 	}
 
 	// Create a new instance of the function's input type
