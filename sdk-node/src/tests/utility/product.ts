@@ -1,0 +1,104 @@
+import { z } from "zod";
+import { inferableInstance } from "../utils";
+
+const cache = new Map<string, any>();
+
+export const getProduct = async ({
+  id,
+  random,
+}: {
+  id: string;
+  random: string;
+}) => {
+  return {
+    id,
+    name: `Product ${id}`,
+    random,
+  };
+};
+
+export const succeedsOnSecondAttempt = async ({ id }: { id: string }) => {
+  if (cache.has(id)) {
+    return true;
+  } else {
+    cache.set(id, true);
+    // wait 5s and time out
+    await new Promise((resolve) => setTimeout(resolve, 5000));
+  }
+};
+
+export const productService = () => {
+  const service = inferableInstance().service({
+    name: `product${Math.random().toString(36).substring(2, 15)}`,
+  });
+
+  service.register({
+    name: "getProduct10sCache",
+    func: getProduct,
+    schema: {
+      input: z.object({
+        id: z.string(),
+        random: z.string(),
+      }),
+    },
+    config: {
+      retryCountOnStall: 0,
+      timeoutSeconds: 5,
+      cache: {
+        keyPath: "$.id",
+        ttlSeconds: 10,
+      },
+    },
+  });
+
+  service.register({
+    name: "getProduct1sCache",
+    func: getProduct,
+    schema: {
+      input: z.object({
+        id: z.string(),
+        random: z.string(),
+      }),
+    },
+    config: {
+      retryCountOnStall: 0,
+      timeoutSeconds: 5,
+      cache: {
+        keyPath: "$.id",
+        ttlSeconds: 1,
+      },
+    },
+  });
+
+  service.register({
+    name: "failingFunction",
+    func: async () => {
+      await new Promise((resolve) => setTimeout(resolve, 5000));
+    },
+    schema: {
+      input: z.object({
+        id: z.string(),
+      }),
+    },
+    config: {
+      retryCountOnStall: 0,
+      timeoutSeconds: 2,
+    },
+  });
+
+  service.register({
+    name: "succeedsOnSecondAttempt",
+    func: succeedsOnSecondAttempt,
+    schema: {
+      input: z.object({
+        id: z.string(),
+      }),
+    },
+    config: {
+      retryCountOnStall: 2,
+      timeoutSeconds: 2,
+    },
+  });
+
+  return service;
+};
