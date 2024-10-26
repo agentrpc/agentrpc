@@ -182,12 +182,6 @@ class InferablePromptfooProvider implements ApiProvider {
       );
     }
 
-    if (this.apiSecret.startsWith("sk_machine")) {
-      throw new InferableError(
-        "This function can not be called with a machine token.",
-      );
-    }
-
     const clusterId = process.env.INFERABLE_CLUSTER_ID;
 
     // Fetch existing run

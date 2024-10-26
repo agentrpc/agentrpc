@@ -154,7 +154,7 @@ export class Inferable {
       );
     }
 
-    if (!apiSecret.startsWith("sk_cluster_")) {
+    if (!apiSecret.startsWith("sk_")) {
       throw new InferableError(
         `Invalid API Secret. Please see ${links.DOCS_AUTH}`,
       );
