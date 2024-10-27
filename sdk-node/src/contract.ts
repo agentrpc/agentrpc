@@ -13,7 +13,7 @@ const machineHeaders = {
 };
 
 // Alphanumeric, underscore, hyphen, no whitespace. From 6 to 128 characters.
-const userDefinedIdRegex = /^[a-zA-Z0-9_-]{6,128}$/;
+const userDefinedIdRegex = /^[a-zA-Z0-9-]{6,128}$/;
 
 export const blobSchema = z.object({
   id: z.string(),
@@ -860,7 +860,6 @@ export const definition = {
     }),
     body: z.object({
       name: z.string(),
-      type: z.enum(["cluster_manage", "cluster_consume", "cluster_machine"]),
     }),
     responses: {
       200: z.object({
@@ -881,11 +880,6 @@ export const definition = {
         z.object({
           id: z.string(),
           name: z.string(),
-          type: z.enum([
-            "cluster_manage",
-            "cluster_consume",
-            "cluster_machine",
-          ]),
           createdAt: z.date(),
           createdBy: z.string(),
           revokedAt: z.date().nullable(),
@@ -1071,16 +1065,16 @@ export const definition = {
   },
   upsertToolMetadata: {
     method: "PUT",
-    path: "/clusters/:clusterId/tool-metadata",
+    path: "/clusters/:clusterId/tool-metadata/:service/:function_name",
     headers: z.object({
       authorization: z.string(),
     }),
     pathParams: z.object({
       clusterId: z.string(),
-    }),
-    body: z.object({
       service: z.string(),
       function_name: z.string(),
+    }),
+    body: z.object({
       user_defined_context: z.string().nullable(),
       result_schema: z.unknown().nullable(),
     }),
@@ -1169,52 +1163,6 @@ export const definition = {
       }),
     },
   },
-  createPromptTemplate: {
-    method: "POST",
-    path: "/clusters/:clusterId/prompt-templates",
-    headers: z.object({ authorization: z.string() }),
-    body: z.object({
-      name: z.string(),
-      prompt: z.string(),
-      attachedFunctions: z.array(z.string()),
-      structuredOutput: z.object({}).passthrough().optional(),
-    }),
-    responses: {
-      201: z.object({ id: z.string() }),
-      401: z.undefined(),
-    },
-    pathParams: z.object({
-      clusterId: z.string(),
-    }),
-  },
-  upsertPromptTemplate: {
-    method: "PUT",
-    path: "/clusters/:clusterId/prompt-templates",
-    headers: z.object({ authorization: z.string() }),
-    body: z.object({
-      id: z.string().regex(userDefinedIdRegex),
-      name: z.string(),
-      prompt: z.string(),
-      attachedFunctions: z.array(z.string()),
-      structuredOutput: z.object({}).passthrough().optional(),
-    }),
-    responses: {
-      201: z.object({
-        id: z.string(),
-        clusterId: z.string(),
-        name: z.string(),
-        prompt: z.string(),
-        attachedFunctions: z.array(z.string()),
-        structuredOutput: z.unknown().nullable(),
-        createdAt: z.date(),
-        updatedAt: z.date(),
-      }),
-      401: z.undefined(),
-    },
-    pathParams: z.object({
-      clusterId: z.string(),
-    }),
-  },
   getPromptTemplate: {
     method: "GET",
     path: "/clusters/:clusterId/prompt-templates/:templateId",
@@ -1250,15 +1198,37 @@ export const definition = {
       withPreviousVersions: z.enum(["true", "false"]).default("false"),
     }),
   },
-  updatePromptTemplate: {
+  createPromptTemplate: {
+    method: "POST",
+    path: "/clusters/:clusterId/prompt-templates",
+    headers: z.object({ authorization: z.string() }),
+    body: z.object({
+      name: z.string(),
+      prompt: z.string(),
+      attachedFunctions: z.array(z.string()),
+      structuredOutput: z.object({}).passthrough().optional(),
+    }),
+    responses: {
+      201: z.object({ id: z.string() }),
+      401: z.undefined(),
+    },
+    pathParams: z.object({
+      clusterId: z.string(),
+    }),
+  },
+  upsertPromptTemplate: {
     method: "PUT",
     path: "/clusters/:clusterId/prompt-templates/:templateId",
     headers: z.object({ authorization: z.string() }),
+    pathParams: z.object({
+      clusterId: z.string(),
+      templateId: z.string().regex(userDefinedIdRegex),
+    }),
     body: z.object({
       name: z.string().optional(),
       prompt: z.string().optional(),
       attachedFunctions: z.array(z.string()).optional(),
-      structuredOutput: z.object({}).passthrough().optional(),
+      structuredOutput: z.object({}).passthrough().optional().nullable(),
     }),
     responses: {
       200: z.object({
@@ -1274,10 +1244,6 @@ export const definition = {
       401: z.undefined(),
       404: z.object({ message: z.string() }),
     },
-    pathParams: z.object({
-      clusterId: z.string(),
-      templateId: z.string(),
-    }),
   },
   deletePromptTemplate: {
     method: "DELETE",
@@ -1344,7 +1310,7 @@ export const definition = {
       clusterId: z.string(),
     }),
   },
-  updateClusterContext: {
+  upsertClusterContext: {
     method: "PUT",
     path: "/clusters/:clusterId/additional-context",
     headers: z.object({ authorization: z.string() }),
@@ -1427,10 +1393,9 @@ export const definition = {
   },
   upsertKnowledgeArtifact: {
     method: "PUT",
-    path: "/clusters/:clusterId/knowledge",
+    path: "/clusters/:clusterId/knowledge/:artifactId",
     headers: z.object({ authorization: z.string() }),
     body: z.object({
-      id: z.string(),
       data: z.string(),
       tags: z.array(z.string()),
       title: z.string(),
@@ -1443,6 +1408,7 @@ export const definition = {
     },
     pathParams: z.object({
       clusterId: z.string(),
+      artifactId: z.string().regex(userDefinedIdRegex),
     }),
   },
   deleteKnowledgeArtifact: {

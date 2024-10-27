@@ -49,6 +49,10 @@ type TemplateRunInput = Omit<RunInput, "template" | "message" | "id"> & {
   input: Record<string, unknown>;
 };
 
+type UpsertTemplateInput = Required<
+    Parameters<ReturnType<typeof createApiClient>["upsertPromptTemplate"]>[0]
+  >["body"] & { id: string, structuredOutput: z.ZodTypeAny };
+
 /**
  * The Inferable client. This is the main entry point for using Inferable.
  *
@@ -244,19 +248,7 @@ export class Inferable {
    * await template.run({ input: { name: "Jane Doe" } });
    * ```
    */
-  public async template({
-    id,
-    attachedFunctions,
-    name,
-    prompt,
-    structuredOutput,
-  }: {
-    id: string;
-    attachedFunctions: string[];
-    name: string;
-    prompt: string;
-    structuredOutput: z.ZodTypeAny;
-  }) {
+  public async template(input: UpsertTemplateInput) {
     if (!this.clusterId) {
       throw new InferableError(
         "Cluster ID must be provided to manage templates",
@@ -264,24 +256,24 @@ export class Inferable {
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let jsonSchema: any;
+    let jsonSchema: any = undefined;
 
-    try {
-      jsonSchema = zodToJsonSchema(structuredOutput);
-    } catch (e) {
-      throw new InferableError("structuredOutput must be a valid JSON schema");
+    if (!!input.structuredOutput) {
+      try {
+        jsonSchema = zodToJsonSchema(input.structuredOutput);
+      } catch (e) {
+        throw new InferableError("structuredOutput must be a valid JSON schema");
+      }
     }
 
     const upserted = await this.client.upsertPromptTemplate({
       body: {
-        id,
-        attachedFunctions,
-        name,
-        prompt,
+        ...input,
         structuredOutput: jsonSchema,
       },
       params: {
         clusterId: this.clusterId,
+        templateId: input.id,
       },
     });
 
@@ -293,11 +285,11 @@ export class Inferable {
     }
 
     return {
-      id,
+      id: input.id,
       run: (input: TemplateRunInput) =>
         this.run({
           ...input,
-          template: { id, input: input.input },
+          template: { id: upserted.body.id, input: input.input },
         }),
     };
   }
