@@ -303,6 +303,19 @@ export class Inferable {
   }
 
   /**
+   * Creates a template reference. This can be used to trigger runs of a template that was previously registered via the UI.
+   * @param id The ID of the template to reference.
+   * @returns A referenced template instance.
+   */
+  public async templateReference(id: string) {
+    return {
+      id,
+      run: (input: TemplateRunInput) =>
+        this.run({ ...input, template: { id, input: input.input } }),
+    };
+  }
+
+  /**
    * Creates a run.
    * @param input The run definition.
    * @returns A run handle.
