@@ -110,6 +110,7 @@ export class Service {
     while (this.polling && failureCount < MAX_CONSECUTIVE_POLL_FAILURES) {
       try {
         await this.pollIteration();
+        failureCount = 0;
       } catch (e) {
         log("Failed poll iteration", e);
         failureCount++;
