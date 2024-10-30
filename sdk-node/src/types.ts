@@ -11,13 +11,13 @@ export type FunctionInput<T extends z.ZodTypeAny | JsonSchemaInput> =
     : // eslint-disable-next-line @typescript-eslint/no-explicit-any
       any;
 
-export const resultHandlerSchema = {
+export const statusChangeSchema = {
   input: z.object({
     runId: z.string(),
     status: z.enum(["pending", "running", "paused", "done", "failed"]),
-    result: z.object({}).passthrough().nullable(),
-    summary: z.string().nullable(),
-    metadata: z.record(z.string()).nullable(),
+    result: z.object({}).passthrough().nullable().optional(),
+    summary: z.string().nullable().optional(),
+    metadata: z.record(z.string()).nullable().optional(),
   }),
 };
 

@@ -30,28 +30,17 @@ debug.formatters.J = (json) => {
 
 export const log = debug("inferable:client");
 
-type FunctionIdentifier = {
-  service: string;
-  function: string;
-  event?: "result";
-};
 
-type RunInput = {
-  functions?: FunctionIdentifier[] | undefined;
-} & Omit<
-  Required<
+type RunInput = Omit<Required<
     Parameters<ReturnType<typeof createApiClient>["createRun"]>[0]
-  >["body"],
-  "attachedFunctions"
-> & { id?: string };
+  >["body"], "resultSchema"> & {
+  id?: string,
+  resultSchema?: z.ZodType<unknown> | JsonSchemaInput
+};
 
 type TemplateRunInput = Omit<RunInput, "template" | "message" | "id"> & {
   input: Record<string, unknown>;
 };
-
-type UpsertTemplateInput = Required<
-    Parameters<ReturnType<typeof createApiClient>["upsertPromptTemplate"]>[0]
-  >["body"] & { id: string, structuredOutput: z.ZodTypeAny };
 
 /**
  * The Inferable client. This is the main entry point for using Inferable.
@@ -140,7 +129,6 @@ export class Inferable {
     apiSecret?: string;
     endpoint?: string;
     clusterId?: string;
-    jobPollWaitTime?: number;
   }) {
     if (options?.apiSecret && process.env.INFERABLE_API_SECRET) {
       log(
@@ -230,92 +218,27 @@ export class Inferable {
   }
 
   /**
-   * Registers or references a template instance. This can be used to trigger runs of a template.
-   * @param input The template definition or reference.
-   * @returns A registered template instance.
-   * @example
-   * ```ts
-   * const d = new Inferable({apiSecret: "API_SECRET"});
-   *
-   * const template = await d.template({
-   *   id: "new-template-id",
-   *   name: "my-template",
-   *   attachedFunctions: ["my-service.hello"],
-   *   prompt: "Hello {{name}}",
-   *   structuredOutput: { greeting: z.string() }
-   * });
-   *
-   * await template.run({ input: { name: "Jane Doe" } });
-   * ```
-   */
-  public async template(input: UpsertTemplateInput) {
-    if (!this.clusterId) {
-      throw new InferableError(
-        "Cluster ID must be provided to manage templates",
-      );
-    }
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let jsonSchema: any = undefined;
-
-    if (!!input.structuredOutput) {
-      try {
-        jsonSchema = zodToJsonSchema(input.structuredOutput);
-      } catch (e) {
-        throw new InferableError("structuredOutput must be a valid JSON schema");
-      }
-    }
-
-    const upserted = await this.client.upsertPromptTemplate({
-      body: {
-        ...input,
-        structuredOutput: jsonSchema,
-      },
-      params: {
-        clusterId: this.clusterId,
-        templateId: input.id,
-      },
-    });
-
-    if (upserted.status != 200) {
-      throw new InferableError(`Failed to register prompt template`, {
-        body: upserted.body,
-        status: upserted.status,
-      });
-    }
-
-    return {
-      id: input.id,
-      run: (input: TemplateRunInput) =>
-        this.run({
-          ...input,
-          template: { id: upserted.body.id, input: input.input },
-        }),
-    };
-  }
-
-  /**
    * Creates a template reference. This can be used to trigger runs of a template that was previously registered via the UI.
    * @param id The ID of the template to reference.
    * @returns A referenced template instance.
    */
-  public async templateReference(id: string) {
+  public async template(template: { id: string }) {
     return {
-      id,
+      id: template.id,
       run: (input: TemplateRunInput) =>
-        this.run({ ...input, template: { id, input: input.input } }),
+        this.run({ ...input, template: { id: template.id, input: input.input } }),
     };
   }
 
   /**
-   * Creates a run.
+   * Creates a run (or retrieves an existing run if an ID is provided) and returns a reference to it.
    * @param input The run definition.
    * @returns A run handle.
    * @example
    * ```ts
    * const d = new Inferable({apiSecret: "API_SECRET"});
    *
-   * const run = await d.run({ message: "Hello world", functions: ["my-service.hello"] });
+   * const run = await d.run({ message: "Hello world" });
    *
    * console.log("Started run with ID:", run.id);
    *
@@ -327,6 +250,14 @@ export class Inferable {
   public async run(input: RunInput) {
     if (!this.clusterId) {
       throw new InferableError("Cluster ID must be provided to manage runs");
+    }
+
+    let resultSchema: JsonSchemaInput | undefined;
+
+    if (!!input.resultSchema && isZodType(input.resultSchema)) {
+      resultSchema = zodToJsonSchema(input.resultSchema) as JsonSchemaInput;
+    } else {
+      resultSchema = input.resultSchema;
     }
 
     let runResult;
@@ -351,14 +282,10 @@ export class Inferable {
         },
         body: {
           ...input,
-          attachedFunctions: input.functions?.map((f) => {
-            if (typeof f === "string") {
-              return f;
-            }
-            return `${f.service}_${f.function}`;
-          }),
+          resultSchema,
         },
       });
+
 
       if (runResult.status != 201) {
         throw new InferableError("Failed to create run", {
@@ -373,11 +300,11 @@ export class Inferable {
       /**
        * Polls until the run reaches a terminal state (!= "pending" && != "running") or maxWaitTime is reached.
        * @param maxWaitTime The maximum amount of time to wait for the run to reach a terminal state. Defaults to 60 seconds.
-       * @param delay The amount of time to wait between polling attempts. Defaults to 500ms.
+       * @param interval The amount of time to wait between polling attempts. Defaults to 500ms.
        */
-      poll: async (maxWaitTime?: number, delay?: number) => {
+      poll: async (options: { maxWaitTime?: number, interval?: number }) => {
         const start = Date.now();
-        const end = start + (maxWaitTime || 60_000);
+        const end = start + (options.maxWaitTime || 60_000);
 
         while (Date.now() < end) {
           const pollResult = await this.client.getRun({
@@ -395,7 +322,7 @@ export class Inferable {
           }
           if (["pending", "running"].includes(pollResult.body.status ?? "")) {
             await new Promise((resolve) => {
-              setTimeout(resolve, delay || 500);
+              setTimeout(resolve, options.interval || 500);
             });
             continue;
           }

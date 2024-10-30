@@ -98,15 +98,24 @@ The following code will create an [Inferable run](https://docs.inferable.ai/page
 ```typescript
 const run = await i.run({
   message: "Say hello to John",
-  functions: [sayHello],
-  // Alternatively, subscribe an Inferable function as a result handler which will be called when the run is complete.
-  //result: { handler: YOUR_HANDLER_FUNCTION }
+  // Optional: Explicitly attach the `sayHello` function (All functions attached by default)
+  attachedFunctions: [{
+    function: "sayHello",
+    service: "default",
+  }],
+  // Optional: Define a schema for the result to conform to
+  resultSchema: z.object({
+    didSayHello: z.boolean()
+  }),
+  // Optional: Subscribe an Inferable function to receive notifications when the run status changes
+  //onStatusChange: { function: { function: "handler", service: "default" } },
 });
 
 console.log("Started Run", {
   result: run.id,
 });
 
+// Wait for the run to complete and log.
 console.log("Run result", {
   result: await run.poll(),
 });

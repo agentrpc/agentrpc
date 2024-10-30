@@ -22,7 +22,7 @@ export const masked = () => {
 };
 
 export * as InferablePromptfooProvider from "./eval/promptfoo";
-export { resultHandlerSchema } from "./types";
+export { statusChangeSchema } from "./types";
 
 export {
   validateDescription,

@@ -15,6 +15,13 @@ const machineHeaders = {
 // Alphanumeric, underscore, hyphen, no whitespace. From 6 to 128 characters.
 const userDefinedIdRegex = /^[a-zA-Z0-9-]{6,128}$/;
 
+const functionReference = z.object({
+  service: z.string(),
+  function: z.string(),
+});
+
+const anyObject = z.object({}).passthrough();
+
 export const blobSchema = z.object({
   id: z.string(),
   name: z.string(),
@@ -79,7 +86,7 @@ export const learningSchema = z.object({
 export const agentDataSchema = z
   .object({
     done: z.boolean().optional(),
-    result: z.any().optional(),
+    result: anyObject.optional(),
     summary: z.string().optional(),
     learnings: z.array(learningSchema).optional(),
     issue: z.string().optional(),
@@ -111,7 +118,6 @@ export const FunctionConfigSchema = z.object({
     .optional(),
   retryCountOnStall: z.number().optional(),
   timeoutSeconds: z.number().optional(),
-  executionIdPath: z.string().optional(),
   requiresApproval: z.boolean().default(false).optional(),
   private: z.boolean().default(false).optional(),
 });
@@ -249,27 +255,11 @@ export const definition = {
       401: z.undefined(),
     },
     body: z.object({
-      name: z.string(),
-      description: z.string(),
-      additionalContext: z
-        .object({
-          current: z
-            .object({
-              version: z.string(),
-              content: z.string(),
-            })
-            .describe("Current cluster context version"),
-          history: z
-            .array(
-              z.object({
-                version: z.string(),
-                content: z.string(),
-              }),
-            )
-            .describe("History of the cluster context versions"),
-        })
-        .optional()
-        .describe("Additional cluster context which is included in all runs"),
+      name: z.string().optional(),
+      description: z.string().optional(),
+      additionalContext: VersionedTextsSchema.optional().describe(
+        "Additional cluster context which is included in all runs",
+      ),
       debug: z
         .boolean()
         .optional()
@@ -289,6 +279,7 @@ export const definition = {
         id: z.string(),
         name: z.string(),
         description: z.string().nullable(),
+        additionalContext: VersionedTextsSchema.nullable(),
         createdAt: z.date(),
         debug: z.boolean(),
         lastPingAt: z.date().nullable(),
@@ -298,56 +289,6 @@ export const definition = {
     },
     pathParams: z.object({
       clusterId: z.string(),
-    }),
-  },
-  getService: {
-    method: "GET",
-    path: "/clusters/:clusterId/service/:serviceName",
-    headers: z.object({
-      authorization: z.string(),
-    }),
-    responses: {
-      200: z.object({
-        jobs: z.array(
-          z.object({
-            id: z.string(),
-            targetFn: z.string(),
-            service: z.string().nullable(),
-            status: z.string(),
-            resultType: z.string().nullable(),
-            createdAt: z.date(),
-            functionExecutionTime: z.number().nullable(),
-          }),
-        ),
-        definition: z
-          .object({
-            name: z.string(),
-            functions: z
-              .array(
-                z.object({
-                  name: z.string(),
-                  rate: z
-                    .object({
-                      per: z.enum(["minute", "hour"]),
-                      limit: z.number(),
-                    })
-                    .optional(),
-                  cacheTTL: z.number().optional(),
-                }),
-              )
-              .optional(),
-          })
-          .nullable(),
-      }),
-      401: z.undefined(),
-      404: z.undefined(),
-    },
-    pathParams: z.object({
-      clusterId: z.string(),
-      serviceName: z.string(),
-    }),
-    query: z.object({
-      limit: z.coerce.number().min(100).max(5000).default(2000),
     }),
   },
   listEvents: {
@@ -430,6 +371,7 @@ export const definition = {
         .describe("The model identifier for the run"),
       result: z
         .object({
+          // TODO: Remove in favour of onStatusChange
           handler: z
             .object({
               service: z.string(),
@@ -439,6 +381,7 @@ export const definition = {
             .describe(
               "The Inferable function which will be used to return result for the run",
             ),
+          //TODO: Remove in favour of resultSchema
           schema: z
             .object({})
             .passthrough()
@@ -446,12 +389,26 @@ export const definition = {
             .describe("The JSON schema which the result should conform to"),
         })
         .optional(),
-      // TODO: Replace with `functions`
-      attachedFunctions: z
-        .array(z.string())
+      resultSchema: anyObject
         .optional()
         .describe(
-          "An array of attached functions (Keys should be service in the format <SERVICE>_<FUNCTION>)",
+          "A JSON schema definition which the result object should conform to. By default the result will be a JSON object which does not conform to any schema",
+        ),
+      attachedFunctions: z
+        .array(functionReference)
+        .optional()
+        .describe(
+          "An array of functions to make available to the run. By default all functions in the cluster will be available",
+        ),
+      onStatusChange: z
+        .object({
+          function: functionReference.describe(
+            "A function to call when the run status changes",
+          ),
+        })
+        .optional()
+        .describe(
+          "Mechanism for receiving notifications when the run status changes",
         ),
       metadata: z
         .record(z.string())
@@ -655,7 +612,7 @@ export const definition = {
         test: z.boolean(),
         feedbackComment: z.string().nullable(),
         feedbackScore: z.number().nullable(),
-        result: z.string().nullable(),
+        result: anyObject.nullable(),
         summary: z.string().nullable(),
         metadata: z.record(z.string()).nullable(),
         attachedFunctions: z.array(z.string()).nullable(),
@@ -900,23 +857,7 @@ export const definition = {
       204: z.undefined(),
     },
   },
-  getClusterContext: {
-    method: "GET",
-    path: "/clusters/:clusterId/additional-context",
-    headers: z.object({
-      authorization: z.string(),
-    }),
-    responses: {
-      200: z.object({
-        additionalContext: VersionedTextsSchema.nullable(),
-      }),
-      401: z.undefined(),
-      404: z.undefined(),
-    },
-    pathParams: z.object({
-      clusterId: z.string(),
-    }),
-  },
+
   listMachines: {
     method: "GET",
     path: "/clusters/:clusterId/machines",
@@ -936,6 +877,7 @@ export const definition = {
       clusterId: z.string(),
     }),
   },
+
   listServices: {
     method: "GET",
     path: "/clusters/:clusterId/services",
@@ -1063,75 +1005,47 @@ export const definition = {
       404: z.undefined(),
     },
   },
-  upsertToolMetadata: {
+  upsertFunctionMetadata: {
     method: "PUT",
-    path: "/clusters/:clusterId/tool-metadata/:service/:function_name",
+    path: "/clusters/:clusterId/:service/:function/metadata",
     headers: z.object({
       authorization: z.string(),
     }),
     pathParams: z.object({
       clusterId: z.string(),
       service: z.string(),
-      function_name: z.string(),
+      function: z.string(),
     }),
     body: z.object({
-      user_defined_context: z.string().nullable(),
-      result_schema: z.unknown().nullable(),
+      additionalContext: z.string().optional(),
     }),
     responses: {
       204: z.undefined(),
       401: z.undefined(),
     },
   },
-  getToolMetadata: {
+  getFunctionMetadata: {
     method: "GET",
-    path: "/clusters/:clusterId/tool-metadata/:service/:function_name",
+    path: "/clusters/:clusterId/:service/:function/metadata",
     headers: z.object({
       authorization: z.string(),
     }),
     pathParams: z.object({
       clusterId: z.string(),
       service: z.string(),
-      function_name: z.string(),
+      function: z.string(),
     }),
     responses: {
       200: z.object({
-        cluster_id: z.string(),
-        service: z.string(),
-        function_name: z.string(),
-        user_defined_context: z.string().nullable(),
-        result_schema: z.unknown().nullable(),
+        additionalContext: z.string().nullable(),
       }),
       401: z.undefined(),
       404: z.object({ message: z.string() }),
     },
   },
-  getAllToolMetadataForService: {
-    method: "GET",
-    path: "/clusters/:clusterId/tool-metadata/:service",
-    headers: z.object({
-      authorization: z.string(),
-    }),
-    pathParams: z.object({
-      clusterId: z.string(),
-      service: z.string(),
-    }),
-    responses: {
-      200: z.array(
-        z.object({
-          cluster_id: z.string(),
-          service: z.string(),
-          function_name: z.string(),
-          user_defined_context: z.string().nullable(),
-          result_schema: z.unknown().nullable(),
-        }),
-      ),
-      401: z.undefined(),
-    },
-  },
-  deleteToolMetadata: {
+  deleteFunctionMetadata: {
     method: "DELETE",
-    path: "/clusters/:clusterId/tool-metadata/:service/:function_name",
+    path: "/clusters/:clusterId/:service/:function/metadata",
     headers: z.object({
       authorization: z.string(),
     }),
@@ -1159,7 +1073,7 @@ export const definition = {
         name: z.string(),
         prompt: z.string(),
         attachedFunctions: z.array(z.string()),
-        structuredOutput: z.unknown().nullable(),
+        resultSchema: anyObject.nullable().optional(),
       }),
     },
   },
@@ -1174,7 +1088,7 @@ export const definition = {
         name: z.string(),
         prompt: z.string(),
         attachedFunctions: z.array(z.string()),
-        structuredOutput: z.unknown().nullable(),
+        resultSchema: anyObject.nullable(),
         createdAt: z.date(),
         updatedAt: z.date(),
         versions: z.array(
@@ -1183,7 +1097,7 @@ export const definition = {
             name: z.string(),
             prompt: z.string(),
             attachedFunctions: z.array(z.string()),
-            structuredOutput: z.unknown().nullable(),
+            resultSchema: anyObject.nullable(),
           }),
         ),
       }),
@@ -1205,8 +1119,8 @@ export const definition = {
     body: z.object({
       name: z.string(),
       prompt: z.string(),
-      attachedFunctions: z.array(z.string()),
-      structuredOutput: z.object({}).passthrough().optional(),
+      attachedFunctions: z.array(z.string()).optional(),
+      resultSchema: anyObject.optional(),
     }),
     responses: {
       201: z.object({ id: z.string() }),
@@ -1228,7 +1142,7 @@ export const definition = {
       name: z.string().optional(),
       prompt: z.string().optional(),
       attachedFunctions: z.array(z.string()).optional(),
-      structuredOutput: z.object({}).passthrough().optional().nullable(),
+      resultSchema: z.object({}).passthrough().optional().nullable(),
     }),
     responses: {
       200: z.object({
@@ -1237,7 +1151,7 @@ export const definition = {
         name: z.string(),
         prompt: z.string(),
         attachedFunctions: z.array(z.string()),
-        structuredOutput: z.unknown().nullable(),
+        resultSchema: z.unknown().nullable(),
         createdAt: z.date(),
         updatedAt: z.date(),
       }),
@@ -1272,7 +1186,7 @@ export const definition = {
           name: z.string(),
           prompt: z.string(),
           attachedFunctions: z.array(z.string()),
-          structuredOutput: z.unknown().nullable(),
+          resultSchema: z.unknown().nullable(),
           createdAt: z.date(),
           updatedAt: z.date(),
         }),
@@ -1298,27 +1212,12 @@ export const definition = {
           name: z.string(),
           prompt: z.string(),
           attachedFunctions: z.array(z.string()),
-          structuredOutput: z.unknown().nullable(),
+          resultSchema: z.unknown().nullable(),
           createdAt: z.date(),
           updatedAt: z.date(),
           similarity: z.number(),
         }),
       ),
-      401: z.undefined(),
-    },
-    pathParams: z.object({
-      clusterId: z.string(),
-    }),
-  },
-  upsertClusterContext: {
-    method: "PUT",
-    path: "/clusters/:clusterId/additional-context",
-    headers: z.object({ authorization: z.string() }),
-    body: z.object({
-      additionalContext: VersionedTextsSchema,
-    }),
-    responses: {
-      204: z.undefined(),
       401: z.undefined(),
     },
     pathParams: z.object({
