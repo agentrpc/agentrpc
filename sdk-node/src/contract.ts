@@ -369,26 +369,6 @@ export const definition = {
         .enum(["claude-3-5-sonnet", "claude-3-5-sonnet:beta", "claude-3-haiku"])
         .optional()
         .describe("The model identifier for the run"),
-      result: z
-        .object({
-          // TODO: Remove in favour of onStatusChange
-          handler: z
-            .object({
-              service: z.string(),
-              function: z.string(),
-            })
-            .optional()
-            .describe(
-              "The Inferable function which will be used to return result for the run",
-            ),
-          //TODO: Remove in favour of resultSchema
-          schema: z
-            .object({})
-            .passthrough()
-            .optional()
-            .describe("The JSON schema which the result should conform to"),
-        })
-        .optional(),
       resultSchema: anyObject
         .optional()
         .describe(
