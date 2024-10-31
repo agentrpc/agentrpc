@@ -216,7 +216,7 @@ func (i *Inferable) getRun(runID string) (*runResult, error) {
   return &result, nil
 }
 
-// Creates a run  and returns a reference to it.
+// Creates a run and returns a reference to it.
 //
 // Parameters:
 // - input: The run definition.
