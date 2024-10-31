@@ -11,6 +11,18 @@ export type FunctionInput<T extends z.ZodTypeAny | JsonSchemaInput> =
     : // eslint-disable-next-line @typescript-eslint/no-explicit-any
       any;
 
+/**
+ * Schema type that will be returned to a Run's OnStatusChange Function
+ *
+ * @example
+ * ```ts
+ * inferable.default.register({
+ *   name: "onStatusChangeFn",
+ *   schema: statusChangeSchema,
+ *   func: (_input) => {},
+ * });
+ * ```
+ */
 export const statusChangeSchema = {
   input: z.object({
     runId: z.string(),

@@ -30,16 +30,11 @@ debug.formatters.J = (json) => {
 
 export const log = debug("inferable:client");
 
-
 type RunInput = Omit<Required<
     Parameters<ReturnType<typeof createApiClient>["createRun"]>[0]
   >["body"], "resultSchema"> & {
   id?: string,
   resultSchema?: z.ZodType<unknown> | JsonSchemaInput
-};
-
-type TemplateRunInput = Omit<RunInput, "template" | "message" | "id"> & {
-  input: Record<string, unknown>;
 };
 
 /**
@@ -218,22 +213,9 @@ export class Inferable {
   }
 
   /**
-   * Creates a template reference. This can be used to trigger runs of a template that was previously registered via the UI.
-   * @param id The ID of the template to reference.
-   * @returns A referenced template instance.
-   */
-  public async template(template: { id: string }) {
-    return {
-      id: template.id,
-      run: (input: TemplateRunInput) =>
-        this.run({ ...input, template: { id: template.id, input: input.input } }),
-    };
-  }
-
-  /**
    * Creates a run (or retrieves an existing run if an ID is provided) and returns a reference to it.
    * @param input The run definition.
-   * @returns A run handle.
+   * @returns A run reference.
    * @example
    * ```ts
    * const d = new Inferable({apiSecret: "API_SECRET"});
@@ -302,14 +284,18 @@ export class Inferable {
        * @param maxWaitTime The maximum amount of time to wait for the run to reach a terminal state. Defaults to 60 seconds.
        * @param interval The amount of time to wait between polling attempts. Defaults to 500ms.
        */
-      poll: async (options: { maxWaitTime?: number, interval?: number }) => {
+      poll: async (options?: { maxWaitTime?: number, interval?: number }) => {
+        if (!this.clusterId) {
+          throw new InferableError("Cluster ID must be provided to manage runs");
+        }
+
         const start = Date.now();
-        const end = start + (options.maxWaitTime || 60_000);
+        const end = start + (options?.maxWaitTime || 60_000);
 
         while (Date.now() < end) {
           const pollResult = await this.client.getRun({
             params: {
-              clusterId: process.env.INFERABLE_CLUSTER_ID!,
+              clusterId: this.clusterId,
               runId: runResult.body.id,
             },
           });
@@ -322,7 +308,7 @@ export class Inferable {
           }
           if (["pending", "running"].includes(pollResult.body.status ?? "")) {
             await new Promise((resolve) => {
-              setTimeout(resolve, options.interval || 500);
+              setTimeout(resolve, options?.interval || 500);
             });
             continue;
           }

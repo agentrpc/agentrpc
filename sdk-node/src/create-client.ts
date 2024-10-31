@@ -2,6 +2,9 @@ import { initClient, tsRestFetchApi } from "@ts-rest/core";
 import { contract } from "./contract";
 const { version: SDK_VERSION } = require("../package.json");
 
+/**
+ * Provides raw API access to the Inferable API.
+ */
 export const createApiClient = ({
   baseUrl,
   machineId,

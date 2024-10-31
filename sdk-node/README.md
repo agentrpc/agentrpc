@@ -35,8 +35,6 @@ pnpm add inferable
 
 ### 1. Initializing Inferable
 
-Create a file named i.ts which will be used to initialize Inferable. This file will export the Inferable instance.
-
 ```typescript
 // d.ts
 
@@ -44,29 +42,27 @@ import { Inferable } from "inferable";
 
 // Initialize the Inferable client with your API secret.
 // Get yours at https://console.inferable.ai.
-export const d = new Inferable({
+const client = new Inferable({
   apiSecret: "YOUR_API_SECRET",
 });
 ```
 
+If you don't provide an API key or base URL, it will attempt to read them from the following environment variables:
+
+- `INFERABLE_API_SECRET`
+- `INFERABLE_API_ENDPOINT`
+
 ### 2. Hello World Function
 
-In a separate file, register a "sayHello" [function](https://docs.inferable.ai/pages/functions). This file will import the Inferable instance from `i.ts` and register the [function](https://docs.inferable.ai/pages/functions) with the [control-plane](https://docs.inferable.ai/pages/control-plane).
+Register a "sayHello" [function](https://docs.inferable.ai/pages/functions). This file will register the function with the [control-plane](https://docs.inferable.ai/pages/control-plane).
 
 ```typescript
-// service.ts
-
-import { i } from "./i";
-
-// Define a simple function that returns "Hello, World!"
-const sayHello = async ({ to }: { to: string }) => {
-  return `Hello, ${to}!`;
-};
-
-// Register the service (using the 'default' service)
-const sayHello = i.default.register({
+// Register a simple function (using the 'default' service)
+const sayHello = client.default.register({
   name: "sayHello",
-  func: sayHello,
+  func: async ({ to }: { to: string }) => {
+    return `Hello, ${to}!`;
+  },
   schema: {
     input: z.object({
       to: z.string(),
@@ -75,18 +71,10 @@ const sayHello = i.default.register({
 });
 
 // Start the 'default' service
-i.default.start();
+client.default.start();
 ```
 
-### 3. Running the Service
-
-To run the service, simply run the file with the [function](https://docs.inferable.ai/pages/functions) definition. This will start the `default` [service](https://docs.inferable.ai/pages/services) and make it available to the Inferable agent.
-
-```bash
-tsx service.ts
-```
-
-### 4. Trigger a run
+### 3. Trigger a run
 
 The following code will create an [Inferable run](https://docs.inferable.ai/pages/runs) with the prompt "Say hello to John" and the `sayHello` function attached.
 
@@ -96,7 +84,7 @@ The following code will create an [Inferable run](https://docs.inferable.ai/page
 > - in the [CLI](https://www.npmjs.com/package/@inferable/cli) via `inf runs list`
 
 ```typescript
-const run = await i.run({
+const run = await client.run({
   message: "Say hello to John",
   // Optional: Explicitly attach the `sayHello` function (All functions attached by default)
   attachedFunctions: [{
@@ -111,7 +99,7 @@ const run = await i.run({
   //onStatusChange: { function: { function: "handler", service: "default" } },
 });
 
-console.log("Started Run", {
+console.log("Run Started", {
   result: run.id,
 });
 
@@ -126,3 +114,11 @@ console.log("Run result", {
 ## Documentation
 
 - [Inferable documentation](https://docs.inferable.ai/) contains all the information you need to get started with Inferable.
+
+## Support
+
+For support or questions, please [create an issue in the repository](https://github.com/inferablehq/inferable/issues) or [join the Discord](https://discord.gg/WHcTNeDP)
+
+## Contributing
+
+Contributions to the Inferable NodeJs Client are welcome. Please ensure that your code adheres to the existing style and includes appropriate tests.

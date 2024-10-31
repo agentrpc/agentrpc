@@ -17,11 +17,11 @@
  */
 
 export { Inferable } from "./Inferable";
+
 export const masked = () => {
   throw new Error("masked is not implemented");
 };
 
-export * as InferablePromptfooProvider from "./eval/promptfoo";
 export { statusChangeSchema } from "./types";
 
 export {

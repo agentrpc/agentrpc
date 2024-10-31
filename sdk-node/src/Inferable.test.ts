@@ -3,13 +3,13 @@ import { z } from "zod";
 import { Inferable } from "./Inferable";
 import {
   TEST_CLUSTER_ID,
-  TEST_CONSUME_SECRET,
-  TEST_MACHINE_SECRET,
+  TEST_API_SECRET,
   client,
   inferableInstance,
 } from "./tests/utils";
 import { setupServer } from "msw/node";
 import { http, HttpResponse, passthrough } from "msw";
+import { statusChangeSchema } from "./types";
 
 const testService = () => {
   const inferable = inferableInstance();
@@ -57,12 +57,12 @@ describe("Inferable", () => {
 
   it("should initialize without optional args", () => {
     expect(
-      () => new Inferable({ apiSecret: TEST_MACHINE_SECRET }),
+      () => new Inferable({ apiSecret: TEST_API_SECRET }),
     ).not.toThrow();
   });
 
   it("should initialize with API secret in environment", () => {
-    process.env.INFERABLE_API_SECRET = TEST_MACHINE_SECRET;
+    process.env.INFERABLE_API_SECRET = TEST_API_SECRET;
     expect(() => new Inferable()).not.toThrow();
   });
 
@@ -237,5 +237,63 @@ describe("Functions", () => {
     await expect(service.start).rejects.toThrow();
 
     server.close();
+  });
+});
+
+// This should match the example in the readme
+describe("Inferable SDK End to End Test", () => {
+  it("should trigger a run, call a function, and call a status change function", async () => {
+  const client = inferableInstance();
+
+    let didCallSayHello = false;
+    let didCallOnStatusChange = false;
+
+    // Register a simple function (using the 'default' service)
+    const sayHello = client.default.register({
+      name: "sayHello",
+      func: async ({ to }: { to: string }) => {
+        didCallSayHello = true;
+        return `Hello, ${to}!`;
+      },
+      schema: {
+        input: z.object({
+          to: z.string(),
+        }),
+      },
+    });
+
+    const onStatusChange = client.default.register({
+      name: "onStatusChangeFn",
+      schema: statusChangeSchema,
+      func: (_input) => {
+        didCallOnStatusChange = true;
+      },
+    });
+
+    try {
+      await client.default.start();
+
+      const run = await client.run({
+        message: "Say hello to John",
+        // Optional: Explicitly attach the `sayHello` function (All functions attached by default)
+        attachedFunctions: [sayHello],
+        // Optional: Define a schema for the result to conform to
+        resultSchema: z.object({
+          didSayHello: z.boolean()
+        }),
+        // Optional: Subscribe an Inferable function to receive notifications when the run status changes
+        onStatusChange: { function: onStatusChange },
+      });
+
+      const result = await run.poll();
+
+      await new Promise((resolve) => setTimeout(resolve, 500));
+
+      expect(result).not.toBeNull();
+      expect(didCallSayHello).toBe(true);
+      expect(didCallOnStatusChange).toBe(true);
+    } finally {
+      await client.default.stop();
+    }
   });
 });
