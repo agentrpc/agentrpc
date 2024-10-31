@@ -1,7 +1,9 @@
 package inferable
 
 import (
+	"fmt"
 	"testing"
+	"time"
 
 	"github.com/inferablehq/inferable/sdk-go/internal/util"
 )
@@ -9,6 +11,7 @@ import (
 type EchoInput struct {
 	Input string
 }
+
 
 func echo(input EchoInput) string {
 	return input.Input
@@ -143,4 +146,77 @@ func TestInferableFunctions(t *testing.T) {
 			t.Logf("Machine ID is consistent: %s", id1)
 		}
 	})
+}
+
+// This should match the example in the readme
+func TestInferableE2E(t *testing.T) {
+  machineSecret, _, clusterID, apiEndpoint := util.GetTestVars()
+
+  client, err := New(InferableOptions{
+    APIEndpoint: apiEndpoint,
+    APISecret:   machineSecret,
+    ClusterID: clusterID,
+  })
+
+  if err != nil {
+    t.Fatalf("Error creating Inferable instance: %v", err)
+  }
+
+  didCallSayHello := false
+  didCallResultHandler := false
+
+  sayHello, err := client.Default.RegisterFunc(Function{
+    Func:        func(input EchoInput) string {
+      didCallSayHello = true
+      return "Hello " + input.Input
+    },
+    Name:        "SayHello",
+    Description: "A simple greeting function",
+  })
+
+  resultHandler, err := client.Default.RegisterFunc(Function{
+    Func:        func(input OnStatusChangeInput) string {
+      didCallResultHandler = true
+      fmt.Println("OnStatusChange: ", input)
+      return ""
+    },
+    Name:        "ResultHandler",
+  })
+
+  client.Default.Start()
+
+  run, err := client.CreateRun(CreateRunInput{
+    Message: "Say hello to John Smith",
+    AttachedFunctions: []*FunctionReference{
+      sayHello,
+    },
+    OnStatusChange: &OnStatusChange{
+      Function: resultHandler,
+    },
+  })
+
+  if err != nil {
+    panic(err)
+  }
+
+  fmt.Println("Run started: ", run.ID)
+  result, err := run.Poll(nil)
+  if err != nil {
+    panic(err)
+  }
+  fmt.Println("Run Result: ", result)
+
+  time.Sleep(500 * time.Millisecond)
+
+  if result == nil {
+    t.Error("Result is nil")
+  }
+
+  if !didCallSayHello {
+    t.Error("SayHello function was not called")
+  }
+
+  if !didCallResultHandler {
+    t.Error("OnStatusChange function was not called")
+  }
 }

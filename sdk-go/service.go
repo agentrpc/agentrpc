@@ -54,12 +54,12 @@ type callResult struct {
 	Meta       callResultMeta `json:"meta"`
 }
 
-type FunctionHandle struct {
-	Service  string
-	Function string
+type FunctionReference struct {
+	Service  string `json:"service"`
+	Function string `json:"function"`
 }
 
-func (s *service) RegisterFunc(fn Function) (*FunctionHandle, error) {
+func (s *service) RegisterFunc(fn Function) (*FunctionReference, error) {
 	if s.isPolling() {
 		return nil, fmt.Errorf("functions must be registered before starting the service.")
 	}
@@ -105,7 +105,7 @@ func (s *service) RegisterFunc(fn Function) (*FunctionHandle, error) {
 	fn.schema = defs
 
 	s.Functions[fn.Name] = fn
-	return &FunctionHandle{Service: s.Name, Function: fn.Name}, nil
+	return &FunctionReference{Service: s.Name, Function: fn.Name}, nil
 }
 
 func (s *service) registerMachine() error {

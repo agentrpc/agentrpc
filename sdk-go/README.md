@@ -35,9 +35,12 @@ if err != nil {
 }
 ```
 
-If you don't provide an API endpoint, it will use the default endpoint: `https://api.inferable.ai`.
+If you don't provide an API key or base URL, it will attempt to read them from the following environment variables:
 
-### Hello World Function
+- `INFERABLE_API_SECRET`
+- `INFERABLE_API_ENDPOINT`
+
+### Registering a Function
 
 Register a "SayHello" [function](https://docs.inferable.ai/pages/functions) with the [control-plane](https://docs.inferable.ai/pages/control-plane).
 
@@ -61,7 +64,7 @@ if err != nil {
 
 <summary>👉 The Golang SDK for Inferable reflects the types from the input struct of the function.</summary>
 
-Unlike the TypeScript schema, the Golang SDK for Inferable reflects the types from the input struct of the function. It uses the [invopop/jsonschema](https://pkg.go.dev/github.com/invopop/jsonschema) library under the hood to generate JSON schemas from Go types through reflection.
+Unlike the [NodeJs SDK](https://github.com/inferablehq/inferable/sdk-node), the Golang SDK for Inferable reflects the types from the input struct of the function. It uses the [invopop/jsonschema](https://pkg.go.dev/github.com/invopop/jsonschema) library under the hood to generate JSON schemas from Go types through reflection.
 
 If the input struct defines jsonschema properties using struct tags, the SDK will use those in the generated schema. This allows for fine-grained control over the schema generation.
 
@@ -112,26 +115,7 @@ The [invopop/jsonschema library](https://pkg.go.dev/github.com/invopop/jsonschem
 
 </details>
 
-### Starting the Service
-
-To start the service and begin listening for incoming requests:
-
-```go
-err := service.Start()
-if err != nil {
-    // Handle error
-}
-```
-
-### Stopping the Service
-
-To stop the service:
-
-```go
-service.Stop()
-```
-
-### Trigger a run
+### Triggering a run
 
 The following code will create an [Inferable run](https://docs.inferable.ai/pages/runs) with the prompt "Say hello to John" and the `sayHello` function attached.
 
@@ -141,23 +125,39 @@ The following code will create an [Inferable run](https://docs.inferable.ai/page
 > - in the [CLI](https://www.npmjs.com/package/@inferable/cli) via `inf runs list`
 
 ```typescript
-  run, err := i.CreateRun(&inferable.Run{
+  run, err := i.CreateRun(inferable.CreateRunInput{
     Message: "Say hello to John Smith",
-    Functions: []*inferable.FunctionHandle{
-      sayHello,
+    AttachedFunctions: []*inferable.FunctionReference{
+      inferable.FunctionReference{
+        Function: "SayHello",
+        Service: "default",
+      }
     },
-    // Optionally, subscribe an Inferable function as a result handler which will be called when the run is complete.
-    // Result: &inferable.RunResult{Handler: resultHandler},
+    // Optional: Subscribe an Inferable function to receive notifications when the run status changes
+    //OnStatusChange: &inferable.OnStatusChange{
+    //  Function: OnStatusChangeFunction
+    //}
   })
+
+  fmt.Println("Run started: ", run.ID)
+  result, err := run.Poll(nil)
+  if err != nil {
+    panic(err)
+  }
+  fmt.Println("Run Result: ", result)
 
 ```
 
 > Runs can also be triggered via the [API](https://docs.inferable.ai/pages/invoking-a-run-api), [CLI](https://www.npmjs.com/package/@inferable/cli) or [playground UI](https://app.inferable.ai/).
 
-## Contributing
+## Documentation
 
-Contributions to the Inferable Go Client are welcome. Please ensure that your code adheres to the existing style and includes appropriate tests.
+- [Inferable documentation](https://docs.inferable.ai/) contains all the information you need to get started with Inferable.
 
 ## Support
 
-For support or questions, please [create an issue in the repository](https://github.com/inferablehq/inferable/sdk-go/issues).
+For support or questions, please [create an issue in the repository](https://github.com/inferablehq/inferable/issues) or [join the Discord](https://discord.gg/WHcTNeDP)
+
+## Contributing
+
+Contributions to the Inferable Go Client are welcome. Please ensure that your code adheres to the existing style and includes appropriate tests.

@@ -32,29 +32,6 @@ func NewClient(options ClientOptions) (*Client, error) {
 	}, nil
 }
 
-type CreateRunInput struct {
-  Message   string `json:"message,omitempty"`
-  AttachedFunctions []string`json:"attachedFunctions,omitempty"`
-  Metadata    map[string]string `json:"metadata,omitempty"`
-  Result      *CreateRunResultInput `json:"result,omitempty"`
-  Template   *CreateRunTemplateInput `json:"template,omitempty"`
-}
-
-type CreateRunTemplateInput struct {
-  Input map[string]interface{} `json:"input,omitempty"`
-  ID     string `json:"id,omitempty"`
-}
-
-type CreateRunResultInput struct {
-  Handler   *CreateRunResultHandlerInput `json:"handler,omitempty"`
-  Schema    interface{} `json:"schema,omitempty"`
-}
-
-type CreateRunResultHandlerInput struct {
-  Service string `json:"service"`
-  Function string `json:"function"`
-}
-
 type FetchDataOptions struct {
 	Path        string
 	Headers     map[string]string

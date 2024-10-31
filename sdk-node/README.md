@@ -33,11 +33,9 @@ pnpm add inferable
 
 ## Quick Start
 
-### 1. Initializing Inferable
+### Initializing the Client
 
 ```typescript
-// d.ts
-
 import { Inferable } from "inferable";
 
 // Initialize the Inferable client with your API secret.
@@ -52,7 +50,7 @@ If you don't provide an API key or base URL, it will attempt to read them from t
 - `INFERABLE_API_SECRET`
 - `INFERABLE_API_ENDPOINT`
 
-### 2. Hello World Function
+### Registering a Function
 
 Register a "sayHello" [function](https://docs.inferable.ai/pages/functions). This file will register the function with the [control-plane](https://docs.inferable.ai/pages/control-plane).
 
@@ -74,7 +72,7 @@ const sayHello = client.default.register({
 client.default.start();
 ```
 
-### 3. Trigger a run
+### Triggering a run
 
 The following code will create an [Inferable run](https://docs.inferable.ai/pages/runs) with the prompt "Say hello to John" and the `sayHello` function attached.
 

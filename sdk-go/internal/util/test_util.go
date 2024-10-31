@@ -6,29 +6,25 @@ import (
 )
 
 func GetTestVars() (string, string, string, string) {
-	if os.Getenv("INFERABLE_MACHINE_SECRET") == "" {
+	if os.Getenv("INFERABLE_TEST_API_ENDPOINT") == "" {
 		err := godotenv.Load("./.env")
 		if err != nil {
 			panic(err)
 		}
 	}
-	machineSecret := os.Getenv("INFERABLE_MACHINE_SECRET")
-	consumeSecret := os.Getenv("INFERABLE_CONSUME_SECRET")
-	clusterId := os.Getenv("INFERABLE_CLUSTER_ID")
-	apiEndpoint := os.Getenv("INFERABLE_API_ENDPOINT")
+	machineSecret := os.Getenv("INFERABLE_TEST_API_SECRET")
+	clusterId := os.Getenv("INFERABLE_TEST_CLUSTER_ID")
+	apiEndpoint := os.Getenv("INFERABLE_TEST_API_ENDPOINT")
 
 	if apiEndpoint == "" {
-    panic("INFERABLE_API_ENDPOINT is not available")
+    panic("INFERABLE_TEST_API_ENDPOINT is not available")
 	}
 	if machineSecret == "" {
-		panic("INFERABLE_MACHINE_SECRET is not available")
-	}
-	if consumeSecret == "" {
-		panic("INFERABLE_CONSUME_SECRET is not available")
+		panic("INFERABLE_TEST_API_SECRET is not available")
 	}
 	if clusterId == "" {
-		panic("INFERABLE_CLUSTER_ID is not set in .env")
+		panic("INFERABLE_TEST_CLUSTER_ID is not set in .env")
 	}
 
-	return machineSecret, consumeSecret, clusterId, apiEndpoint
+	return machineSecret, machineSecret, clusterId, apiEndpoint
 }

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"reflect"
+	"time"
 
 	"github.com/inferablehq/inferable/sdk-go/internal/client"
 	"github.com/inferablehq/inferable/sdk-go/internal/util"
@@ -39,8 +40,8 @@ type InferableOptions struct {
 	ClusterID   string
 }
 
-// Input struct passed to a Run's result handler
-type RunResultHandlerInput struct {
+// Struct type that will be returned to a Run's OnStatusChange Function
+type OnStatusChangeInput struct {
 	Status   string      `json:"status"`
 	RunId    string      `json:"runId"`
 	Result   interface{} `json:"result"`
@@ -48,31 +49,34 @@ type RunResultHandlerInput struct {
 	Metadata interface{} `json:"metadata"`
 }
 
-type RunResult struct {
-	Handler *FunctionHandle
-	Schema  interface{}
-}
+type runResult = OnStatusChangeInput
 
 type RunTemplate struct {
-	ID    string
-	Input map[string]interface{}
+	ID    string `json:"id"`
+	Input map[string]interface{} `json:"input"`
 }
 
-type Run struct {
-	Functions []*FunctionHandle
-	Message   string
-	Result    *RunResult
-	Metadata  map[string]string
-	Template  *RunTemplate
+type OnStatusChange struct {
+	Function *FunctionReference `json:"function"`
 }
 
-type runHandle struct {
-	ID string
+type CreateRunInput struct {
+	AttachedFunctions []*FunctionReference `json:"attachedFunctions,omitempty"`
+	Message           string               `json:"message"`
+	OnStatusChange    *OnStatusChange      `json:"onStatusChange,omitempty"`
+	ResultSchema      interface{}          `json:"resultSchema,omitempty"`
+	Metadata          map[string]string    `json:"metadata,omitempty"`
+	Template          *RunTemplate         `json:"template,omitempty"`
 }
 
-type templateHandle struct {
-	ID  string
-	Run func(input *Run) (*runHandle, error)
+type PollOptions struct {
+	MaxWaitTime *time.Duration
+	Interval    *time.Duration
+}
+
+type runReference struct {
+	ID   string
+	Poll func(options *PollOptions) (*runResult, error)
 }
 
 func New(options InferableOptions) (*Inferable, error) {
@@ -123,44 +127,44 @@ func (i *Inferable) RegisterService(serviceName string) (*service, error) {
 	return service, nil
 }
 
-func (i *Inferable) CreateRun(input *Run) (*runHandle, error) {
+func (i *Inferable) getRun(runID string) (*runResult, error) {
+  if i.clusterID == "" {
+    return nil, fmt.Errorf("Cluster ID must be provided to manage runs")
+  }
+
+  // Prepare headers
+  headers := map[string]string{
+    "Authorization":          "Bearer " + i.apiSecret,
+    "X-Machine-ID":           i.machineID,
+    "X-Machine-SDK-Version":  Version,
+    "X-Machine-SDK-Language": "go",
+  }
+
+  options := client.FetchDataOptions{
+    Path:    fmt.Sprintf("/clusters/%s/runs/%s", i.clusterID, runID),
+    Method:  "GET",
+    Headers: headers,
+  }
+
+  responseData, _, err, _ := i.fetchData(options)
+  if err != nil {
+    return nil, fmt.Errorf("failed to get run: %v", err)
+  }
+  var result runResult
+  err = json.Unmarshal(responseData, &result)
+  if err != nil {
+    return nil, fmt.Errorf("failed to unmarshal response: %v", err)
+  }
+  return &result, nil
+}
+
+func (i *Inferable) CreateRun(input CreateRunInput) (*runReference, error) {
 	if i.clusterID == "" {
 		return nil, fmt.Errorf("cluster ID must be provided to manage runs")
 	}
 
-	var attachedFunctions []string
-	for _, fn := range input.Functions {
-		attachedFunctions = append(attachedFunctions, fmt.Sprintf("%s_%s", fn.Service, fn.Function))
-	}
-
-	payload := client.CreateRunInput{
-		Message:           input.Message,
-		AttachedFunctions: attachedFunctions,
-		Metadata:          input.Metadata,
-	}
-
-	if input.Template != nil {
-		payload.Template = &client.CreateRunTemplateInput{
-			Input: input.Template.Input,
-			ID:    input.Template.ID,
-		}
-	}
-
-	if input.Result != nil {
-		payload.Result = &client.CreateRunResultInput{}
-		if input.Result.Handler != nil {
-			payload.Result.Handler = &client.CreateRunResultHandlerInput{
-				Service:  input.Result.Handler.Service,
-				Function: input.Result.Handler.Function,
-			}
-		}
-		if input.Result.Schema != nil {
-			payload.Result.Schema = input.Result.Schema
-		}
-	}
-
 	// Marshal the payload to JSON
-	jsonPayload, err := json.Marshal(payload)
+	jsonPayload, err := json.Marshal(input)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal payload: %v", err)
 	}
@@ -196,64 +200,42 @@ func (i *Inferable) CreateRun(input *Run) (*runHandle, error) {
 		return nil, fmt.Errorf("failed to parse run response: %v", err)
 	}
 
-	return &runHandle{ID: response.ID}, nil
-}
+	return &runReference{
+    ID: response.ID,
+    Poll: func(options *PollOptions) (*runResult, error) {
+      // Default values for polling options
+      maxWaitTime := 60 * time.Second
+      interval := 500 * time.Millisecond
 
-func (i *Inferable) GetTemplate(id string) (*templateHandle, error) {
-	if i.clusterID == "" {
-		return nil, fmt.Errorf("cluster ID must be provided to manage runs")
-	}
+      if options != nil {
+        if options.MaxWaitTime != nil {
+          maxWaitTime = *options.MaxWaitTime
+        }
 
-	// Prepare headers
-	headers := map[string]string{
-		"Authorization":          "Bearer " + i.apiSecret,
-		"X-Machine-ID":           i.machineID,
-		"X-Machine-SDK-Version":  Version,
-		"X-Machine-SDK-Language": "go",
-	}
+        if options.Interval != nil {
+          interval = *options.Interval
+        }
+      }
 
-	// Call the registerMachine endpoint
-	options := client.FetchDataOptions{
-		Path:    fmt.Sprintf("/clusters/%s/prompt-templates/%s", i.clusterID, id),
-		Method:  "GET",
-		Headers: headers,
-	}
+      start := time.Now()
+      end := start.Add(maxWaitTime)
 
-	responseData, _, err, _ := i.fetchData(options)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get template: %v", err)
-	}
+      for time.Now().Before(end) {
+        pollResult, err := i.getRun(response.ID)
+        if err != nil {
+          return nil, fmt.Errorf("failed to poll for run: %w", err)
+        }
 
-	// Parse the response
-	var response struct {
-		ID string `json:"id"`
-	}
+        if pollResult.Status != "pending" && pollResult.Status != "running" {
+          return pollResult, nil
+        }
 
-	err = json.Unmarshal(responseData, &response)
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse template response: %v", err)
-	}
+        time.Sleep(interval)
+      }
 
-	return &templateHandle{
-		ID: response.ID,
-		Run: func(input *Run) (*runHandle, error) {
-			// CLone the input
-			inputCopy := *input
-
-			// Set the template ID
-			if inputCopy.Template == nil {
-				inputCopy.Template = &RunTemplate{
-					ID: response.ID,
-				}
-			} else {
-				inputCopy.Template.ID = response.ID
-			}
-
-			fmt.Println(inputCopy)
-
-			return i.CreateRun(&inputCopy)
-		},
-	}, nil
+      return nil, fmt.Errorf("max wait time reached, polling stopped")
+    },
+  }, nil
 }
 
 func (i *Inferable) callFunc(serviceName, funcName string, args ...interface{}) ([]reflect.Value, error) {
