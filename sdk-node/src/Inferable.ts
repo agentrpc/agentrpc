@@ -40,20 +40,15 @@ type RunInput = Omit<Required<
 /**
  * The Inferable client. This is the main entry point for using Inferable.
  *
- * Inferable client exposes two main methods:
- * * `service` - Registers a service with Inferable.
- * * `workflow` - Starts a workflow with Inferable
- *
- * @example Basic usage
  * ```ts
  * // src/service.ts
  *
  * // create a new Inferable instance
- * const d = new Inferable({
+ * const client = new Inferable({
  *  apiSecret: "API_SECRET",
  * });
  *
- * const myService = d.service({
+ * const myService = client.service({
  *   name: "my-service",
  * });
  *
@@ -101,23 +96,14 @@ export class Inferable {
    * @example
    * ```ts
    * // Basic usage
-   * const d = new Inferable({
+   * const client = new Inferable({
    *  apiSecret: "API_SECRET",
    * });
    *
    * // OR
    *
    * process.env.INFERABLE_API_SECRET = "API_SECRET";
-   * const d = new Inferable();
-   *
-   *
-   * // With encryption
-   * const d = new Inferable({
-   *  encryptionKeys: [
-   *    Buffer.from("abcdefghijklmnopqrstuvwxzy123456"), // current key
-   *    Buffer.from("abcdefghijklmnopqrstuvwxzy123old"), // previous key
-   *  ],
-   * });
+   * const client = new Inferable();
    * ```
    */
   constructor(options?: {
@@ -191,18 +177,18 @@ export class Inferable {
    * @see {@link service}
    * @example
    * ```ts
-   * const d = new Inferable({apiSecret: "API_SECRET"});
+   * const client = new Inferable({apiSecret: "API_SECRET"});
    *
-   * d.default.register("hello", z.object({name: z.string()}), async ({name}: {name: string}) => {
+   * client.default.register("hello", z.object({name: z.string()}), async ({name}: {name: string}) => {
    *   return `Hello ${name}`;
    * });
    *
    * // start the service
-   * await d.default.start();
+   * await client.default.start();
    *
    * // stop the service on shutdown
    * process.on("beforeExit", async () => {
-   *   await d.default.stop();
+   *   await client.default.stop();
    * });
    *
    */
@@ -218,9 +204,9 @@ export class Inferable {
    * @returns A run reference.
    * @example
    * ```ts
-   * const d = new Inferable({apiSecret: "API_SECRET"});
+   * const client = new Inferable({apiSecret: "API_SECRET"});
    *
-   * const run = await d.run({ message: "Hello world" });
+   * const run = await client.run({ message: "Hello world" });
    *
    * console.log("Started run with ID:", run.id);
    *
@@ -325,9 +311,9 @@ export class Inferable {
    * @returns A registered service instance.
    * @example
    * ```ts
-   * const d = new Inferable({apiSecret: "API_SECRET"});
+   * const client = new Inferable({apiSecret: "API_SECRET"});
    *
-   * const service = d.service({
+   * const service = client.service({
    *   name: "my-service",
    * });
    *
