@@ -59,6 +59,38 @@ type FunctionReference struct {
 	Function string `json:"function"`
 }
 
+// Registers a function against the service.
+//
+// Parameters:
+// - input: The function definition.
+//
+// Returns:
+// A function reference.
+//
+// Example:
+//
+//  // Create a new Inferable instance with an API secret
+//  client := inferable.New(InferableOptions{
+//      ApiSecret: "API_SECRET",
+//  })
+//
+//  // Define and register the service
+//  service := client.Service("MyService")
+//
+//  sayHello, err := service.RegisterFunc(Function{
+//    Func:        func(input EchoInput) string {
+//      didCallSayHello = true
+//      return "Hello " + input.Input
+//    },
+//    Name:        "SayHello",
+//    Description: "A simple greeting function",
+//  })
+//
+//  // Start the service
+//  service.Start()
+//
+//  // Stop the service on shutdown
+//  defer service.Stop()
 func (s *service) RegisterFunc(fn Function) (*FunctionReference, error) {
 	if s.isPolling() {
 		return nil, fmt.Errorf("functions must be registered before starting the service.")

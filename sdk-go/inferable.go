@@ -30,7 +30,33 @@ type Inferable struct {
 	functionRegistry functionRegistry
 	machineID        string
 	clusterID        string
-	Default          *service
+  // Convenience reference to a service with the name 'default'.
+  //
+  // Returns:
+  // A registered service instance.
+  //
+  // Example:
+  //
+  //  // Create a new Inferable instance with an API secret
+  //  client := inferable.New(InferableOptions{
+  //      ApiSecret: "API_SECRET",
+  //  })
+  //
+  //  client.Default.RegisterFunc(Function{
+  //    Func:        func(input EchoInput) string {
+  //      didCallSayHello = true
+  //      return "Hello " + input.Input
+  //    },
+  //    Name:        "SayHello",
+  //    Description: "A simple greeting function",
+  //  })
+  //
+  //  // Start the service
+  //  client.Default.Start()
+  //
+  //  // Stop the service on shutdown
+  //  defer client.Default.Stop()
+  Default          *service
 }
 
 type InferableOptions struct {
@@ -114,6 +140,38 @@ func New(options InferableOptions) (*Inferable, error) {
 	return inferable, nil
 }
 
+// Registers a service with Inferable. This will register all functions on the service.
+//
+// Parameters:
+// - input: The service definition.
+//
+// Returns:
+// A registered service instance.
+//
+// Example:
+//
+//  // Create a new Inferable instance with an API secret
+//  client := inferable.New(InferableOptions{
+//      ApiSecret: "API_SECRET",
+//  })
+//
+//  // Define and register the service
+//  service := client.Service("MyService")
+//
+//  sayHello, err := service.RegisterFunc(Function{
+//    Func:        func(input EchoInput) string {
+//      didCallSayHello = true
+//      return "Hello " + input.Input
+//    },
+//    Name:        "SayHello",
+//    Description: "A simple greeting function",
+//  })
+//
+//  // Start the service
+//  service.Start()
+//
+//  // Stop the service on shutdown
+//  defer service.Stop()
 func (i *Inferable) RegisterService(serviceName string) (*service, error) {
 	if _, exists := i.functionRegistry.services[serviceName]; exists {
 		return nil, fmt.Errorf("service with name '%s' already registered", serviceName)
@@ -158,6 +216,37 @@ func (i *Inferable) getRun(runID string) (*runResult, error) {
   return &result, nil
 }
 
+// Creates a run  and returns a reference to it.
+//
+// Parameters:
+// - input: The run definition.
+//
+// Returns:
+// A run reference.
+//
+// Example:
+//
+//  // Create a new Inferable instance with an API secret
+//  client := inferable.New(InferableOptions{
+//      ApiSecret: "API_SECRET",
+//  })
+//
+//  run, err := client.Run(CreateRunInput{
+//      Message: "Hello world",
+//  })
+//
+//  if err != nil {
+//      log.Fatal("Failed to create run:", err)
+//  }
+//
+//  fmt.Println("Started run with ID:", run.ID)
+//
+//  result, err := run.Poll()
+//  if err != nil {
+//      log.Fatal("Failed to poll run result:", err)
+//  }
+//
+//  fmt.Println("Run result:", result)
 func (i *Inferable) CreateRun(input CreateRunInput) (*runReference, error) {
 	if i.clusterID == "" {
 		return nil, fmt.Errorf("cluster ID must be provided to manage runs")
