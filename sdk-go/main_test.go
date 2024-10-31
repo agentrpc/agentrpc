@@ -206,7 +206,7 @@ func TestInferableE2E(t *testing.T) {
   }
   fmt.Println("Run Result: ", result)
 
-  time.Sleep(500 * time.Millisecond)
+  time.Sleep(1000 * time.Millisecond)
 
   if result == nil {
     t.Error("Result is nil")

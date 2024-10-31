@@ -124,7 +124,7 @@ The following code will create an [Inferable run](https://docs.inferable.ai/page
 > - in the [playground UI](https://app.inferable.ai/) via `inf app`
 > - in the [CLI](https://www.npmjs.com/package/@inferable/cli) via `inf runs list`
 
-```typescript
+```go
   run, err := i.CreateRun(inferable.CreateRunInput{
     Message: "Say hello to John Smith",
     AttachedFunctions: []*inferable.FunctionReference{
