@@ -297,7 +297,7 @@ export class Inferable {
             });
           }
           if (
-            ["pending", "running", "paused"].includes(
+            ["paused", "pending", "running"].includes(
               pollResult.body.status ?? "",
             )
           ) {

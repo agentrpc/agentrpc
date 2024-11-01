@@ -315,7 +315,7 @@ func (i *Inferable) CreateRun(input CreateRunInput) (*runReference, error) {
 					return nil, fmt.Errorf("failed to poll for run: %w", err)
 				}
 
-				if pollResult.Status != "pending" && pollResult.Status != "running" && pollResult.Status != "paused" {
+				if pollResult.Status != "paused" && pollResult.Status != "pending" && pollResult.Status != "running" {
 					return pollResult, nil
 				}
 
