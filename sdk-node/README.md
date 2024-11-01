@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://a.inferable.ai/logo.png?v=2" width="200" style="border-radius: 10px" />
+  <img src="https://a.inferable.ai/logo-hex.png" width="200" style="border-radius: 10px" />
 </p>
 
 # Typescript SDK
@@ -85,13 +85,15 @@ The following code will create an [Inferable run](https://docs.inferable.ai/page
 const run = await client.run({
   message: "Say hello to John",
   // Optional: Explicitly attach the `sayHello` function (All functions attached by default)
-  attachedFunctions: [{
-    function: "sayHello",
-    service: "default",
-  }],
+  attachedFunctions: [
+    {
+      function: "sayHello",
+      service: "default",
+    },
+  ],
   // Optional: Define a schema for the result to conform to
   resultSchema: z.object({
-    didSayHello: z.boolean()
+    didSayHello: z.boolean(),
   }),
   // Optional: Subscribe an Inferable function to receive notifications when the run status changes
   //onStatusChange: { function: { function: "handler", service: "default" } },
