@@ -44,5 +44,14 @@
   },
   "jest": {
     "testTimeout": 30000
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/inferablehq/inferable.git"
+  },
+  "homepage": "https://www.inferable.ai",
+  "bugs": {
+    "email": "hi@inferable.ai",
+    "url": "https://github.com/inferablehq/inferable/issues"
   }
 }
