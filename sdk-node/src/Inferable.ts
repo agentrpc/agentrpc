@@ -30,11 +30,14 @@ debug.formatters.J = (json) => {
 
 export const log = debug("inferable:client");
 
-type RunInput = Omit<Required<
+type RunInput = Omit<
+  Required<
     Parameters<ReturnType<typeof createApiClient>["createRun"]>[0]
-  >["body"], "resultSchema"> & {
-  id?: string,
-  resultSchema?: z.ZodType<unknown> | JsonSchemaInput
+  >["body"],
+  "resultSchema"
+> & {
+  id?: string;
+  resultSchema?: z.ZodType<unknown> | JsonSchemaInput;
 };
 
 /**
@@ -254,7 +257,6 @@ export class Inferable {
         },
       });
 
-
       if (runResult.status != 201) {
         throw new InferableError("Failed to create run", {
           body: runResult.body,
@@ -266,13 +268,15 @@ export class Inferable {
     return {
       id: runResult.body.id,
       /**
-       * Polls until the run reaches a terminal state (!= "pending" && != "running") or maxWaitTime is reached.
+       * Polls until the run reaches a terminal state (!= "pending" && != "running" && != "paused") or maxWaitTime is reached.
        * @param maxWaitTime The maximum amount of time to wait for the run to reach a terminal state. Defaults to 60 seconds.
        * @param interval The amount of time to wait between polling attempts. Defaults to 500ms.
        */
-      poll: async (options?: { maxWaitTime?: number, interval?: number }) => {
+      poll: async (options?: { maxWaitTime?: number; interval?: number }) => {
         if (!this.clusterId) {
-          throw new InferableError("Cluster ID must be provided to manage runs");
+          throw new InferableError(
+            "Cluster ID must be provided to manage runs",
+          );
         }
 
         const start = Date.now();
@@ -292,7 +296,11 @@ export class Inferable {
               status: pollResult.status,
             });
           }
-          if (["pending", "running"].includes(pollResult.body.status ?? "")) {
+          if (
+            ["pending", "running", "paused"].includes(
+              pollResult.body.status ?? "",
+            )
+          ) {
             await new Promise((resolve) => {
               setTimeout(resolve, options?.interval || 500);
             });

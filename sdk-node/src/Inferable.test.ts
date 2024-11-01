@@ -56,9 +56,7 @@ describe("Inferable", () => {
   });
 
   it("should initialize without optional args", () => {
-    expect(
-      () => new Inferable({ apiSecret: TEST_API_SECRET }),
-    ).not.toThrow();
+    expect(() => new Inferable({ apiSecret: TEST_API_SECRET })).not.toThrow();
   });
 
   it("should initialize with API secret in environment", () => {
@@ -243,7 +241,7 @@ describe("Functions", () => {
 // This should match the example in the readme
 describe("Inferable SDK End to End Test", () => {
   it("should trigger a run, call a function, and call a status change function", async () => {
-  const client = inferableInstance();
+    const client = inferableInstance();
 
     let didCallSayHello = false;
     let didCallOnStatusChange = false;
@@ -279,7 +277,7 @@ describe("Inferable SDK End to End Test", () => {
         attachedFunctions: [sayHello],
         // Optional: Define a schema for the result to conform to
         resultSchema: z.object({
-          didSayHello: z.boolean()
+          didSayHello: z.boolean(),
         }),
         // Optional: Subscribe an Inferable function to receive notifications when the run status changes
         onStatusChange: { function: onStatusChange },
@@ -287,7 +285,7 @@ describe("Inferable SDK End to End Test", () => {
 
       const result = await run.poll();
 
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      await new Promise((resolve) => setTimeout(resolve, 5000));
 
       expect(result).not.toBeNull();
       expect(didCallSayHello).toBe(true);

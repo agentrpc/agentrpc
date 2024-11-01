@@ -30,33 +30,33 @@ type Inferable struct {
 	functionRegistry functionRegistry
 	machineID        string
 	clusterID        string
-  // Convenience reference to a service with the name 'default'.
-  //
-  // Returns:
-  // A registered service instance.
-  //
-  // Example:
-  //
-  //  // Create a new Inferable instance with an API secret
-  //  client := inferable.New(InferableOptions{
-  //      ApiSecret: "API_SECRET",
-  //  })
-  //
-  //  client.Default.RegisterFunc(Function{
-  //    Func:        func(input EchoInput) string {
-  //      didCallSayHello = true
-  //      return "Hello " + input.Input
-  //    },
-  //    Name:        "SayHello",
-  //    Description: "A simple greeting function",
-  //  })
-  //
-  //  // Start the service
-  //  client.Default.Start()
-  //
-  //  // Stop the service on shutdown
-  //  defer client.Default.Stop()
-  Default          *service
+	// Convenience reference to a service with the name 'default'.
+	//
+	// Returns:
+	// A registered service instance.
+	//
+	// Example:
+	//
+	//  // Create a new Inferable instance with an API secret
+	//  client := inferable.New(InferableOptions{
+	//      ApiSecret: "API_SECRET",
+	//  })
+	//
+	//  client.Default.RegisterFunc(Function{
+	//    Func:        func(input EchoInput) string {
+	//      didCallSayHello = true
+	//      return "Hello " + input.Input
+	//    },
+	//    Name:        "SayHello",
+	//    Description: "A simple greeting function",
+	//  })
+	//
+	//  // Start the service
+	//  client.Default.Start()
+	//
+	//  // Stop the service on shutdown
+	//  defer client.Default.Stop()
+	Default *service
 }
 
 type InferableOptions struct {
@@ -78,7 +78,7 @@ type OnStatusChangeInput struct {
 type runResult = OnStatusChangeInput
 
 type RunTemplate struct {
-	ID    string `json:"id"`
+	ID    string                 `json:"id"`
 	Input map[string]interface{} `json:"input"`
 }
 
@@ -150,28 +150,28 @@ func New(options InferableOptions) (*Inferable, error) {
 //
 // Example:
 //
-//  // Create a new Inferable instance with an API secret
-//  client := inferable.New(InferableOptions{
-//      ApiSecret: "API_SECRET",
-//  })
+//	// Create a new Inferable instance with an API secret
+//	client := inferable.New(InferableOptions{
+//	    ApiSecret: "API_SECRET",
+//	})
 //
-//  // Define and register the service
-//  service := client.Service("MyService")
+//	// Define and register the service
+//	service := client.Service("MyService")
 //
-//  sayHello, err := service.RegisterFunc(Function{
-//    Func:        func(input EchoInput) string {
-//      didCallSayHello = true
-//      return "Hello " + input.Input
-//    },
-//    Name:        "SayHello",
-//    Description: "A simple greeting function",
-//  })
+//	sayHello, err := service.RegisterFunc(Function{
+//	  Func:        func(input EchoInput) string {
+//	    didCallSayHello = true
+//	    return "Hello " + input.Input
+//	  },
+//	  Name:        "SayHello",
+//	  Description: "A simple greeting function",
+//	})
 //
-//  // Start the service
-//  service.Start()
+//	// Start the service
+//	service.Start()
 //
-//  // Stop the service on shutdown
-//  defer service.Stop()
+//	// Stop the service on shutdown
+//	defer service.Stop()
 func (i *Inferable) RegisterService(serviceName string) (*service, error) {
 	if _, exists := i.functionRegistry.services[serviceName]; exists {
 		return nil, fmt.Errorf("service with name '%s' already registered", serviceName)
@@ -186,34 +186,34 @@ func (i *Inferable) RegisterService(serviceName string) (*service, error) {
 }
 
 func (i *Inferable) getRun(runID string) (*runResult, error) {
-  if i.clusterID == "" {
-    return nil, fmt.Errorf("Cluster ID must be provided to manage runs")
-  }
+	if i.clusterID == "" {
+		return nil, fmt.Errorf("Cluster ID must be provided to manage runs")
+	}
 
-  // Prepare headers
-  headers := map[string]string{
-    "Authorization":          "Bearer " + i.apiSecret,
-    "X-Machine-ID":           i.machineID,
-    "X-Machine-SDK-Version":  Version,
-    "X-Machine-SDK-Language": "go",
-  }
+	// Prepare headers
+	headers := map[string]string{
+		"Authorization":          "Bearer " + i.apiSecret,
+		"X-Machine-ID":           i.machineID,
+		"X-Machine-SDK-Version":  Version,
+		"X-Machine-SDK-Language": "go",
+	}
 
-  options := client.FetchDataOptions{
-    Path:    fmt.Sprintf("/clusters/%s/runs/%s", i.clusterID, runID),
-    Method:  "GET",
-    Headers: headers,
-  }
+	options := client.FetchDataOptions{
+		Path:    fmt.Sprintf("/clusters/%s/runs/%s", i.clusterID, runID),
+		Method:  "GET",
+		Headers: headers,
+	}
 
-  responseData, _, err, _ := i.fetchData(options)
-  if err != nil {
-    return nil, fmt.Errorf("failed to get run: %v", err)
-  }
-  var result runResult
-  err = json.Unmarshal(responseData, &result)
-  if err != nil {
-    return nil, fmt.Errorf("failed to unmarshal response: %v", err)
-  }
-  return &result, nil
+	responseData, _, err, _ := i.fetchData(options)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get run: %v", err)
+	}
+	var result runResult
+	err = json.Unmarshal(responseData, &result)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal response: %v", err)
+	}
+	return &result, nil
 }
 
 // Creates a run and returns a reference to it.
@@ -226,27 +226,27 @@ func (i *Inferable) getRun(runID string) (*runResult, error) {
 //
 // Example:
 //
-//  // Create a new Inferable instance with an API secret
-//  client := inferable.New(InferableOptions{
-//      ApiSecret: "API_SECRET",
-//  })
+//	// Create a new Inferable instance with an API secret
+//	client := inferable.New(InferableOptions{
+//	    ApiSecret: "API_SECRET",
+//	})
 //
-//  run, err := client.Run(CreateRunInput{
-//      Message: "Hello world",
-//  })
+//	run, err := client.Run(CreateRunInput{
+//	    Message: "Hello world",
+//	})
 //
-//  if err != nil {
-//      log.Fatal("Failed to create run:", err)
-//  }
+//	if err != nil {
+//	    log.Fatal("Failed to create run:", err)
+//	}
 //
-//  fmt.Println("Started run with ID:", run.ID)
+//	fmt.Println("Started run with ID:", run.ID)
 //
-//  result, err := run.Poll()
-//  if err != nil {
-//      log.Fatal("Failed to poll run result:", err)
-//  }
+//	result, err := run.Poll()
+//	if err != nil {
+//	    log.Fatal("Failed to poll run result:", err)
+//	}
 //
-//  fmt.Println("Run result:", result)
+//	fmt.Println("Run result:", result)
 func (i *Inferable) CreateRun(input CreateRunInput) (*runReference, error) {
 	if i.clusterID == "" {
 		return nil, fmt.Errorf("cluster ID must be provided to manage runs")
@@ -290,41 +290,41 @@ func (i *Inferable) CreateRun(input CreateRunInput) (*runReference, error) {
 	}
 
 	return &runReference{
-    ID: response.ID,
-    Poll: func(options *PollOptions) (*runResult, error) {
-      // Default values for polling options
-      maxWaitTime := 60 * time.Second
-      interval := 500 * time.Millisecond
+		ID: response.ID,
+		Poll: func(options *PollOptions) (*runResult, error) {
+			// Default values for polling options
+			maxWaitTime := 60 * time.Second
+			interval := 500 * time.Millisecond
 
-      if options != nil {
-        if options.MaxWaitTime != nil {
-          maxWaitTime = *options.MaxWaitTime
-        }
+			if options != nil {
+				if options.MaxWaitTime != nil {
+					maxWaitTime = *options.MaxWaitTime
+				}
 
-        if options.Interval != nil {
-          interval = *options.Interval
-        }
-      }
+				if options.Interval != nil {
+					interval = *options.Interval
+				}
+			}
 
-      start := time.Now()
-      end := start.Add(maxWaitTime)
+			start := time.Now()
+			end := start.Add(maxWaitTime)
 
-      for time.Now().Before(end) {
-        pollResult, err := i.getRun(response.ID)
-        if err != nil {
-          return nil, fmt.Errorf("failed to poll for run: %w", err)
-        }
+			for time.Now().Before(end) {
+				pollResult, err := i.getRun(response.ID)
+				if err != nil {
+					return nil, fmt.Errorf("failed to poll for run: %w", err)
+				}
 
-        if pollResult.Status != "pending" && pollResult.Status != "running" {
-          return pollResult, nil
-        }
+				if pollResult.Status != "pending" && pollResult.Status != "running" && pollResult.Status != "paused" {
+					return pollResult, nil
+				}
 
-        time.Sleep(interval)
-      }
+				time.Sleep(interval)
+			}
 
-      return nil, fmt.Errorf("max wait time reached, polling stopped")
-    },
-  }, nil
+			return nil, fmt.Errorf("max wait time reached, polling stopped")
+		},
+	}, nil
 }
 
 func (i *Inferable) callFunc(serviceName, funcName string, args ...interface{}) ([]reflect.Value, error) {
