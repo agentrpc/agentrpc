@@ -93,8 +93,8 @@ type CreateRunInput struct {
 	ResultSchema      interface{}          `json:"resultSchema,omitempty"`
 	Metadata          map[string]string    `json:"metadata,omitempty"`
 	Template          *RunTemplate         `json:"template,omitempty"`
-	ReasoningTraces   bool                 `json:"reasoningTraces,omitempty"`
-	CallSummarization bool                 `json:"callSummarization,omitempty"`
+	ReasoningTraces   bool                 `json:"reasoningTraces"`
+	CallSummarization bool                 `json:"callSummarization"`
 }
 
 type PollOptions struct {
