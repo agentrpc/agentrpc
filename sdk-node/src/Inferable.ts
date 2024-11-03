@@ -6,7 +6,7 @@ import { createApiClient } from "./create-client";
 import { InferableError } from "./errors";
 import * as links from "./links";
 import { machineId } from "./machine-id";
-import { Service } from "./service";
+import { Service, registerMachine } from "./service";
 import {
   FunctionConfig,
   FunctionInput,
@@ -112,15 +112,12 @@ export class Inferable {
   constructor(options?: {
     apiSecret?: string;
     endpoint?: string;
-    clusterId?: string;
   }) {
     if (options?.apiSecret && process.env.INFERABLE_API_SECRET) {
       log(
         "API Secret was provided as an option and environment variable. Constructor argument will be used.",
       );
     }
-
-    this.clusterId = options?.clusterId || process.env.INFERABLE_CLUSTER_ID;
 
     const apiSecret = options?.apiSecret || process.env.INFERABLE_API_SECRET;
 
@@ -219,9 +216,6 @@ export class Inferable {
    * ```
    */
   public async run(input: RunInput) {
-    if (!this.clusterId) {
-      throw new InferableError("Cluster ID must be provided to manage runs");
-    }
 
     let resultSchema: JsonSchemaInput | undefined;
 
@@ -235,7 +229,7 @@ export class Inferable {
     if (input.id) {
       runResult = await this.client.getRun({
         params: {
-          clusterId: this.clusterId,
+          clusterId: await this.getClusterId(),
           runId: input.id,
         },
       });
@@ -249,7 +243,7 @@ export class Inferable {
     } else {
       runResult = await this.client.createRun({
         params: {
-          clusterId: this.clusterId,
+          clusterId: await this.getClusterId(),
         },
         body: {
           ...input,
@@ -392,6 +386,7 @@ export class Inferable {
           machineId: this.machineId,
           apiSecret: this.apiSecret,
           service: input.name,
+          clusterId: await this.getClusterId(),
           functions: Object.values(this.functionRegistry).filter(
             (f) => f.serviceName == input.name,
           ),
@@ -504,5 +499,15 @@ export class Inferable {
     });
 
     this.functionRegistry[registration.name] = registration;
+  }
+
+  private async getClusterId() {
+    if (!this.clusterId) {
+      // Call register machine without any services to test API key and get clusterId
+      const registerResult = await registerMachine(this.client);
+      this.clusterId = registerResult.clusterId;
+    }
+
+    return this.clusterId!
   }
 }

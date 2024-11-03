@@ -131,7 +131,7 @@ export const definition = {
       ...machineHeaders,
     }),
     body: z.object({
-      service: z.string(),
+      service: z.string().optional(),
       functions: z
         .array(
           z.object({
@@ -564,7 +564,6 @@ export const definition = {
           status: z
             .enum(["pending", "running", "paused", "done", "failed"])
             .nullable(),
-          parentWorkflowId: z.string().nullable(),
           test: z.boolean(),
           promptTemplateId: z.string().nullable(),
           promptTemplateVersion: z.number().nullable(),

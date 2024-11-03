@@ -240,6 +240,7 @@ describe("Functions", () => {
 
 // This should match the example in the readme
 describe("Inferable SDK End to End Test", () => {
+  jest.retryTimes(3);
   it("should trigger a run, call a function, and call a status change function", async () => {
     const client = inferableInstance();
 

@@ -20,7 +20,7 @@ type CallMessage = {
 
 export class Service {
   public name: string;
-  public clusterId: string | null = null;
+  public clusterId: string;
   public polling = false;
 
   private functions: FunctionRegistration[] = [];
@@ -34,6 +34,7 @@ export class Service {
     machineId: string;
     apiSecret: string;
     service: string;
+    clusterId: string;
     functions: FunctionRegistration[];
   }) {
     this.name = options.service;
@@ -45,62 +46,24 @@ export class Service {
     });
 
     this.functions = options.functions;
+
+    this.clusterId = options.clusterId;
   }
 
-  public async start(): Promise<{ clusterId: string }> {
+  public async start() {
     log("Starting polling service", { service: this.name });
-    const { clusterId } = await this.registerMachine();
-
-    this.clusterId = clusterId;
+    await registerMachine(this.client, {
+      name: this.name,
+      functions: this.functions,
+    });
 
     // Purposefully not awaited
     this.runLoop();
-
-    return {
-      clusterId,
-    };
   }
 
   public async stop(): Promise<void> {
     log("Stopping polling agent", { service: this.name });
     this.polling = false;
-  }
-
-  private async registerMachine(): Promise<{
-    clusterId: string;
-  }> {
-    log("registering machine", {
-      service: this.name,
-      functions: this.functions.map((f) => f.name),
-    });
-
-    const registerResult = await this.client.createMachine({
-      headers: {
-        "x-sentinel-no-mask": "1",
-      },
-      body: {
-        service: this.name,
-        functions: this.functions.map((func) => ({
-          name: func.name,
-          description: func.description,
-          schema: func.schema.inputJson,
-          config: func.config,
-        })),
-      },
-    });
-
-    if (registerResult?.status !== 200) {
-      log("Failed to register machine", registerResult);
-
-      throw new InferableError("Failed to register machine", {
-        status: registerResult.status,
-        body: registerResult.body,
-      });
-    }
-
-    return {
-      clusterId: registerResult.body.clusterId,
-    };
   }
 
   private async runLoop() {
@@ -151,7 +114,10 @@ export class Service {
     }
 
     if (pollResult?.status === 410) {
-      await this.registerMachine();
+      await registerMachine(this.client, {
+        name: this.name,
+        functions: this.functions,
+      });
     }
 
     if (pollResult?.status !== 200) {
@@ -309,3 +275,43 @@ export class Service {
     await onComplete(result);
   }
 }
+
+export const registerMachine = async (client: ReturnType<typeof createApiClient>,
+  service?: {
+    name: string;
+    functions: FunctionRegistration[];
+  }) => {
+  log("registering machine", {
+    service: service?.name,
+    functions: service?.functions.map((f) => f.name),
+  });
+
+  const registerResult = await client.createMachine({
+    headers: {
+      "x-sentinel-no-mask": "1",
+    },
+    body: {
+      service: service?.name,
+      functions: service?.functions.map((func) => ({
+        name: func.name,
+        description: func.description,
+        schema: func.schema.inputJson,
+        config: func.config,
+      })),
+    },
+  });
+
+  if (registerResult?.status !== 200) {
+    log("Failed to register machine", registerResult);
+
+    throw new InferableError("Failed to register machine", {
+      status: registerResult.status,
+      body: registerResult.body,
+    });
+  }
+
+  return {
+    clusterId: registerResult.body.clusterId,
+  };
+}
+

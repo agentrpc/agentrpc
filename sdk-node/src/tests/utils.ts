@@ -30,5 +30,4 @@ export const inferableInstance = () =>
   new Inferable({
     apiSecret: TEST_API_SECRET,
     endpoint: TEST_ENDPOINT,
-    clusterId: TEST_CLUSTER_ID,
   });
