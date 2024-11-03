@@ -149,12 +149,11 @@ func TestInferableFunctions(t *testing.T) {
 
 // This should match the example in the readme
 func TestInferableE2E(t *testing.T) {
-	machineSecret, _, clusterID, apiEndpoint := util.GetTestVars()
+	machineSecret, _, _, apiEndpoint := util.GetTestVars()
 
 	client, err := New(InferableOptions{
 		APIEndpoint: apiEndpoint,
 		APISecret:   machineSecret,
-		ClusterID:   clusterID,
 	})
 
 	if err != nil {

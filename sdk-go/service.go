@@ -32,7 +32,6 @@ type service struct {
 	Name       string
 	Functions  map[string]Function
 	inferable  *Inferable
-	clusterId  string
 	ctx        context.Context
 	cancel     context.CancelFunc
 	retryAfter int
@@ -144,87 +143,9 @@ func (s *service) RegisterFunc(fn Function) (*FunctionReference, error) {
 	return &FunctionReference{Service: s.Name, Function: fn.Name}, nil
 }
 
-func (s *service) registerMachine() error {
-	// Check if there are any registered functions
-	if len(s.Functions) == 0 {
-		return fmt.Errorf("cannot register service '%s': no functions registered", s.Name)
-	}
-
-	// Prepare the payload for registration
-	payload := struct {
-		Service   string `json:"service"`
-		Functions []struct {
-			Name        string `json:"name"`
-			Description string `json:"description,omitempty"`
-			Schema      string `json:"schema,omitempty"`
-		} `json:"functions,omitempty"`
-	}{
-		Service: s.Name,
-	}
-
-	// Add registered functions to the payload
-	for _, fn := range s.Functions {
-		schemaJSON, err := json.Marshal(fn.schema)
-		if err != nil {
-			return fmt.Errorf("failed to marshal schema for function '%s': %v", fn.Name, err)
-		}
-
-		payload.Functions = append(payload.Functions, struct {
-			Name        string `json:"name"`
-			Description string `json:"description,omitempty"`
-			Schema      string `json:"schema,omitempty"`
-		}{
-			Name:        fn.Name,
-			Description: fn.Description,
-			Schema:      string(schemaJSON),
-		})
-	}
-
-	// Marshal the payload to JSON
-	jsonPayload, err := json.Marshal(payload)
-	if err != nil {
-		return fmt.Errorf("failed to marshal payload: %v", err)
-	}
-
-	// Prepare headers
-	headers := map[string]string{
-		"Authorization":          "Bearer " + s.inferable.apiSecret,
-		"X-Machine-ID":           s.inferable.machineID,
-		"X-Machine-SDK-Version":  Version,
-		"X-Machine-SDK-Language": "go",
-	}
-
-	// Call the registerMachine endpoint
-	options := client.FetchDataOptions{
-		Path:    "/machines",
-		Method:  "POST",
-		Headers: headers,
-		Body:    string(jsonPayload),
-	}
-
-	responseData, _, err, _ := s.inferable.fetchData(options)
-	if err != nil {
-		return fmt.Errorf("failed to register machine: %v", err)
-	}
-
-	// Parse the response
-	var response struct {
-		ClusterId string `json:"clusterId"`
-	}
-
-	err = json.Unmarshal(responseData, &response)
-	if err != nil {
-		return fmt.Errorf("failed to parse registration response: %v", err)
-	}
-
-	s.clusterId = response.ClusterId
-
-	return nil
-}
-
 // Start initializes the service, registers the machine, and starts polling for messages
 func (s *service) Start() error {
-	err := s.registerMachine()
+	_, err := s.inferable.registerMachine(s)
 	if err != nil {
 		return fmt.Errorf("failed to register machine: %v", err)
 	}
@@ -277,8 +198,13 @@ func (s *service) poll() error {
 		"X-Machine-SDK-Language": "go",
 	}
 
+	clusterId, err := s.inferable.getClusterId()
+	if err != nil {
+		return fmt.Errorf("failed to get cluster id: %v", err)
+	}
+
 	options := client.FetchDataOptions{
-		Path:    fmt.Sprintf("/clusters/%s/calls?acknowledge=true&service=%s&status=pending&limit=10", s.clusterId, s.Name),
+		Path:    fmt.Sprintf("/clusters/%s/calls?acknowledge=true&service=%s&status=pending&limit=10", clusterId, s.Name),
 		Method:  "GET",
 		Headers: headers,
 	}
@@ -286,7 +212,7 @@ func (s *service) poll() error {
 	result, respHeaders, err, status := s.inferable.fetchData(options)
 
 	if status == 410 {
-		s.registerMachine()
+		s.inferable.registerMachine(s)
 	}
 
 	if err != nil {
@@ -394,8 +320,13 @@ func (s *service) persistJobResult(jobID string, result callResult) error {
 		"X-Machine-SDK-Language": "go",
 	}
 
+	clusterId, err := s.inferable.getClusterId()
+	if err != nil {
+		return fmt.Errorf("failed to get cluster id: %v", err)
+	}
+
 	options := client.FetchDataOptions{
-		Path:    fmt.Sprintf("/clusters/%s/calls/%s/result", s.clusterId, jobID),
+		Path:    fmt.Sprintf("/clusters/%s/calls/%s/result", clusterId, jobID),
 		Method:  "POST",
 		Headers: headers,
 		Body:    string(payloadJSON),

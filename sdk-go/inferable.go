@@ -63,7 +63,6 @@ type InferableOptions struct {
 	APIEndpoint string
 	APISecret   string
 	MachineID   string
-	ClusterID   string
 }
 
 // Struct type that will be returned to a Run's OnStatusChange Function
@@ -128,7 +127,6 @@ func New(options InferableOptions) (*Inferable, error) {
 		client:           client,
 		apiEndpoint:      options.APIEndpoint,
 		apiSecret:        options.APISecret,
-		clusterID:        options.ClusterID,
 		functionRegistry: functionRegistry{services: make(map[string]*service)},
 		machineID:        machineID,
 	}
@@ -178,6 +176,7 @@ func (i *Inferable) RegisterService(serviceName string) (*service, error) {
 	if _, exists := i.functionRegistry.services[serviceName]; exists {
 		return nil, fmt.Errorf("service with name '%s' already registered", serviceName)
 	}
+
 	service := &service{
 		Name:      serviceName,
 		Functions: make(map[string]Function),
@@ -188,10 +187,6 @@ func (i *Inferable) RegisterService(serviceName string) (*service, error) {
 }
 
 func (i *Inferable) getRun(runID string) (*runResult, error) {
-	if i.clusterID == "" {
-		return nil, fmt.Errorf("cluster ID must be provided to manage runs")
-	}
-
 	// Prepare headers
 	headers := map[string]string{
 		"Authorization":          "Bearer " + i.apiSecret,
@@ -200,8 +195,13 @@ func (i *Inferable) getRun(runID string) (*runResult, error) {
 		"X-Machine-SDK-Language": "go",
 	}
 
+	clusterId, err := i.getClusterId()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get cluster id: %v", err)
+	}
+
 	options := client.FetchDataOptions{
-		Path:    fmt.Sprintf("/clusters/%s/runs/%s", i.clusterID, runID),
+		Path:    fmt.Sprintf("/clusters/%s/runs/%s", clusterId, runID),
 		Method:  "GET",
 		Headers: headers,
 	}
@@ -250,8 +250,9 @@ func (i *Inferable) getRun(runID string) (*runResult, error) {
 //
 //	fmt.Println("Run result:", result)
 func (i *Inferable) CreateRun(input CreateRunInput) (*runReference, error) {
-	if i.clusterID == "" {
-		return nil, fmt.Errorf("cluster ID must be provided to manage runs")
+	clusterId, err := i.getClusterId()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get cluster id: %v", err)
 	}
 
 	// Marshal the payload to JSON
@@ -268,9 +269,8 @@ func (i *Inferable) CreateRun(input CreateRunInput) (*runReference, error) {
 		"X-Machine-SDK-Language": "go",
 	}
 
-	// Call the registerMachine endpoint
 	options := client.FetchDataOptions{
-		Path:    fmt.Sprintf("/clusters/%s/runs", i.clusterID),
+		Path:    fmt.Sprintf("/clusters/%s/runs", clusterId),
 		Method:  "POST",
 		Headers: headers,
 		Body:    string(jsonPayload),
@@ -419,4 +419,96 @@ func (i *Inferable) serverOk() error {
 	}
 
 	return nil
+}
+
+func (i *Inferable) getClusterId() (string, error) {
+	if i.clusterID == "" {
+		clusterId, err := i.registerMachine(nil)
+		if err != nil {
+			return "", fmt.Errorf("failed to register machine: %v", err)
+		}
+
+		i.clusterID = clusterId
+	}
+
+	return i.clusterID, nil
+}
+
+func (i *Inferable) registerMachine(s *service) (string, error) {
+
+	// Prepare the payload for registration
+	payload := struct {
+		Service   string `json:"service,omitempty"`
+		Functions []struct {
+			Name        string `json:"name"`
+			Description string `json:"description,omitempty"`
+			Schema      string `json:"schema,omitempty"`
+		} `json:"functions,omitempty"`
+	}{}
+
+	if s != nil {
+		payload.Service = s.Name
+
+		// Check if there are any registered functions
+		if len(s.Functions) == 0 {
+			return "", fmt.Errorf("cannot register service '%s': no functions registered", s.Name)
+		}
+
+		// Add registered functions to the payload
+		for _, fn := range s.Functions {
+			schemaJSON, err := json.Marshal(fn.schema)
+			if err != nil {
+				return "", fmt.Errorf("failed to marshal schema for function '%s': %v", fn.Name, err)
+			}
+
+			payload.Functions = append(payload.Functions, struct {
+				Name        string `json:"name"`
+				Description string `json:"description,omitempty"`
+				Schema      string `json:"schema,omitempty"`
+			}{
+				Name:        fn.Name,
+				Description: fn.Description,
+				Schema:      string(schemaJSON),
+			})
+		}
+	}
+
+	// Marshal the payload to JSON
+	jsonPayload, err := json.Marshal(payload)
+	if err != nil {
+		return "", fmt.Errorf("failed to marshal payload: %v", err)
+	}
+
+	// Prepare headers
+	headers := map[string]string{
+		"Authorization":          "Bearer " + i.apiSecret,
+		"X-Machine-ID":           i.machineID,
+		"X-Machine-SDK-Version":  Version,
+		"X-Machine-SDK-Language": "go",
+	}
+
+	// Call the registerMachine endpoint
+	options := client.FetchDataOptions{
+		Path:    "/machines",
+		Method:  "POST",
+		Headers: headers,
+		Body:    string(jsonPayload),
+	}
+
+	responseData, _, err, _ := i.fetchData(options)
+	if err != nil {
+		return "", fmt.Errorf("failed to register machine: %v", err)
+	}
+
+	// Parse the response
+	var response struct {
+		ClusterId string `json:"clusterId"`
+	}
+
+	err = json.Unmarshal(responseData, &response)
+	if err != nil {
+		return "", fmt.Errorf("failed to parse registration response: %v", err)
+	}
+
+	return response.ClusterId, nil
 }
