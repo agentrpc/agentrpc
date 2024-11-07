@@ -13,7 +13,7 @@ const machineHeaders = {
 };
 
 // Alphanumeric, underscore, hyphen, no whitespace. From 6 to 128 characters.
-const userDefinedIdRegex = /^[a-zA-Z0-9-]{6,128}$/;
+const userDefinedIdRegex = /^[a-zA-Z0-9-_]{6,128}$/;
 
 const functionReference = z.object({
   service: z.string(),
@@ -426,7 +426,7 @@ export const definition = {
             ),
         })
         .optional()
-        .describe("A prompt template which the run should be created from"),
+        .describe("DEPRECATED"),
       reasoningTraces: z
         .boolean()
         .default(true)
@@ -582,7 +582,6 @@ export const definition = {
     responses: {
       200: z.object({
         id: z.string(),
-        jobHandle: z.string().nullable(),
         userId: z.string().nullable(),
         status: z
           .enum(["pending", "running", "paused", "done", "failed"])
@@ -900,6 +899,7 @@ export const definition = {
       runId: z.string(),
     }),
     responses: {
+      404: z.undefined(),
       200: z.object({
         messages: z.array(
           z.object({
@@ -955,7 +955,6 @@ export const definition = {
         ),
         run: z.object({
           id: z.string(),
-          jobHandle: z.string().nullable(),
           userId: z.string().nullable(),
           status: z
             .enum(["pending", "running", "paused", "done", "failed"])
@@ -1232,7 +1231,9 @@ export const definition = {
         z.object({
           id: z.string(),
           data: z.string(),
-          tags: z.array(z.string()),
+          tags: z
+            .array(z.string())
+            .transform((tags) => tags.map((tag) => tag.toLowerCase().trim())),
           title: z.string(),
         }),
       ),
@@ -1252,6 +1253,7 @@ export const definition = {
     query: z.object({
       query: z.string(),
       limit: z.coerce.number().min(1).max(50).default(5),
+      tag: z.string().optional(),
     }),
     responses: {
       200: z.array(
@@ -1275,7 +1277,9 @@ export const definition = {
     headers: z.object({ authorization: z.string() }),
     body: z.object({
       data: z.string(),
-      tags: z.array(z.string()),
+      tags: z
+        .array(z.string())
+        .transform((tags) => tags.map((tag) => tag.toLowerCase().trim())),
       title: z.string(),
     }),
     responses: {
@@ -1396,6 +1400,7 @@ export const definition = {
           id: z.string(),
           function: z.string(),
           input: z.any(),
+          customerAuthContext: z.any().nullable(),
         }),
       ),
     },

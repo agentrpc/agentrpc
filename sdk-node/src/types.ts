@@ -1,6 +1,13 @@
 import { z } from "zod";
 import { FunctionConfigSchema } from "./contract";
 
+/**
+ * Context object which is passed to function calls
+ */
+export type ContextInput = {
+  customerAuthContext?: unknown;
+}
+
 export type FunctionConfig = z.infer<typeof FunctionConfigSchema>;
 
 export type FunctionInput<T extends z.ZodTypeAny | JsonSchemaInput> =
@@ -53,9 +60,8 @@ export type FunctionRegistrationInput<
   T extends z.ZodTypeAny | JsonSchemaInput,
 > = {
   name: string;
-  authenticate?: (authContext: string, args: FunctionInput<T>) => Promise<void>;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  func: (input: FunctionInput<T>) => any;
+  func: (input: FunctionInput<T>, context: ContextInput) => any;
   schema: FunctionSchema<T>;
   config?: FunctionConfig;
   description?: string;
@@ -96,13 +102,12 @@ export interface FunctionRegistration<
   T extends JsonSchemaInput | z.ZodTypeAny = any,
 > {
   name: string;
-  authenticate?: (authContext: string, args: FunctionInput<T>) => Promise<void>;
   serviceName: string;
   description?: string;
   schema: {
     input: T;
     inputJson: string;
   };
-  func: (args: FunctionInput<T>) => any;
+  func: (args: FunctionInput<T>, context: ContextInput) => any;
   config?: FunctionConfig;
 }

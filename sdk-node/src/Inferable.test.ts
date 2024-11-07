@@ -90,9 +90,6 @@ describe("Inferable", () => {
         }),
       },
       description: "echoes the input",
-      authenticate: (ctx, args) => {
-        return args.foo === ctx ? Promise.resolve() : Promise.reject();
-      },
     });
 
     expect(d.registeredFunctions).toEqual(["echo"]);
@@ -116,9 +113,6 @@ describe("Inferable", () => {
         }),
       },
       description: "echoes the input",
-      authenticate: (ctx, args) => {
-        return args.foo === ctx ? Promise.resolve() : Promise.reject();
-      },
     });
 
     expect(d.activeServices).toEqual([]);

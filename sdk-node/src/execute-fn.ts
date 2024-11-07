@@ -1,4 +1,3 @@
-import { InferableError } from "./errors";
 import { serializeError } from "./serialize-error";
 import { FunctionRegistration } from "./types";
 
@@ -11,22 +10,9 @@ export type Result<T = unknown> = {
 export const executeFn = async (
   fn: FunctionRegistration["func"],
   args: Parameters<FunctionRegistration["func"]>,
-  authenticate?: (
-    authContext: string,
-    args: Parameters<FunctionRegistration["func"]>["0"],
-  ) => Promise<void>,
-  authContext?: string,
 ): Promise<Result> => {
   const start = Date.now();
   try {
-    if (authenticate) {
-      if (!authContext) {
-        throw new InferableError(InferableError.JOB_AUTHCONTEXT_INVALID);
-      }
-
-      await authenticate(authContext, args[0]);
-    }
-
     const result = await fn(...args);
 
     return {
