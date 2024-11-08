@@ -87,7 +87,7 @@ export const agentDataSchema = z
   .object({
     done: z.boolean().optional(),
     result: anyObject.optional(),
-    summary: z.string().optional(),
+    message: z.string().optional(),
     learnings: z.array(learningSchema).optional(),
     issue: z.string().optional(),
     invocations: z
@@ -437,6 +437,12 @@ export const definition = {
         .default(true)
         .optional()
         .describe("Enable summarization of oversized call results"),
+      interactive: z
+        .boolean()
+        .default(false)
+        .describe(
+          "Allow the run to be continued with follow-up messages / message edits",
+        ),
     }),
     responses: {
       201: z.object({
@@ -483,24 +489,7 @@ export const definition = {
       type: z.enum(["human", "supervisor"]).optional(),
     }),
     responses: {
-      200: z.object({
-        messages: z.array(
-          z.object({
-            id: z.string(),
-            data: messageDataSchema,
-            type: z.enum([
-              "human",
-              "template",
-              "result",
-              "agent",
-              "agent-invalid",
-              "supervisor",
-            ]),
-            createdAt: z.date(),
-            pending: z.boolean().default(false),
-          }),
-        ),
-      }),
+      201: z.undefined(),
       401: z.undefined(),
     },
     pathParams: z.object({
@@ -522,7 +511,7 @@ export const definition = {
           type: z.enum([
             "human",
             "template",
-            "result",
+            "invocation-result",
             "agent",
             "agent-invalid",
             "supervisor",
@@ -591,7 +580,6 @@ export const definition = {
         feedbackComment: z.string().nullable(),
         feedbackScore: z.number().nullable(),
         result: anyObject.nullable(),
-        summary: z.string().nullable(),
         metadata: z.record(z.string()).nullable(),
         attachedFunctions: z.array(z.string()).nullable(),
       }),
@@ -906,10 +894,10 @@ export const definition = {
             id: z.string(),
             data: messageDataSchema,
             type: z.enum([
-              "human",
               // TODO: Remove 'template' type
               "template",
-              "result",
+              "invocation-result",
+              "human",
               "agent",
               "agent-invalid",
               "supervisor",
