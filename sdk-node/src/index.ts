@@ -29,6 +29,7 @@ export {
   validateServiceName,
   validateFunctionName,
   validateFunctionSchema,
+  validateFunctionArgs,
   blob,
 } from "./util";
 
