@@ -192,7 +192,7 @@ func TestInferableE2E(t *testing.T) {
 	client.Default.Start()
 
 	run, err := client.CreateRun(CreateRunInput{
-		Message: "Say hello to John Smith",
+		InitialPrompt: "Say hello to John Smith",
 		AttachedFunctions: []*FunctionReference{
 			sayHello,
 		},

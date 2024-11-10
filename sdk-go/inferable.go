@@ -70,7 +70,6 @@ type OnStatusChangeInput struct {
 	Status   string      `json:"status"`
 	RunId    string      `json:"runId"`
 	Result   interface{} `json:"result"`
-	Summary  string      `json:"summary"`
 	Metadata interface{} `json:"metadata"`
 }
 
@@ -87,12 +86,13 @@ type OnStatusChange struct {
 
 type CreateRunInput struct {
 	AttachedFunctions []*FunctionReference `json:"attachedFunctions,omitempty"`
-	Message           string               `json:"message"`
+	InitialPrompt     string               `json:"initialPrompt"`
 	OnStatusChange    *OnStatusChange      `json:"onStatusChange,omitempty"`
 	ResultSchema      interface{}          `json:"resultSchema,omitempty"`
 	Metadata          map[string]string    `json:"metadata,omitempty"`
 	Template          *RunTemplate         `json:"template,omitempty"`
 	ReasoningTraces   bool                 `json:"reasoningTraces"`
+	Interactive       bool                 `json:"interactive"`
 	CallSummarization bool                 `json:"callSummarization"`
 }
 

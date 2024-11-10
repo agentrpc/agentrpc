@@ -126,7 +126,7 @@ The following code will create an [Inferable run](https://docs.inferable.ai/page
 
 ```go
   run, err := client.CreateRun(inferable.CreateRunInput{
-    Message: "Say hello to John Smith",
+    InitialPrompt: "Say hello to John Smith",
     // Optional: Explicitly attach the functions (All functions attached by default)
     AttachedFunctions: []*inferable.FunctionReference{
       inferable.FunctionReference{
