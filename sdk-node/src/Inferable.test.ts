@@ -267,7 +267,7 @@ describe("Inferable SDK End to End Test", () => {
       await client.default.start();
 
       const run = await client.run({
-        message: "Say hello to John",
+        initialPrompt: "Say hello to John",
         // Optional: Explicitly attach the `sayHello` function (All functions attached by default)
         attachedFunctions: [sayHello],
         // Optional: Define a schema for the result to conform to

@@ -83,7 +83,7 @@ The following code will create an [Inferable run](https://docs.inferable.ai/page
 
 ```typescript
 const run = await client.run({
-  message: "Say hello to John",
+  initialPrompt: "Say hello to John",
   // Optional: Explicitly attach the `sayHello` function (All functions attached by default)
   attachedFunctions: [
     {

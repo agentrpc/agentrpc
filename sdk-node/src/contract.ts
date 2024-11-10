@@ -355,12 +355,14 @@ export const definition = {
       authorization: z.string(),
     }),
     body: z.object({
-      message: z
+      initialPrompt: z
         .string()
         .optional()
-        .describe(
-          "The prompt message, do not provide if using a prompt template",
-        ),
+        .describe("An initial 'human' message to trigger the run"),
+      systemPrompt: z
+        .string()
+        .optional()
+        .describe("A system prompt for the run."),
       name: z
         .string()
         .optional()
@@ -423,7 +425,8 @@ export const definition = {
             .passthrough()
             .describe(
               "The input arguments, these should match what is described in the prompt template definition",
-            ),
+            )
+            .optional(),
         })
         .optional()
         .describe("DEPRECATED"),
@@ -439,7 +442,7 @@ export const definition = {
         .describe("Enable summarization of oversized call results"),
       interactive: z
         .boolean()
-        .default(false)
+        .default(true)
         .describe(
           "Allow the run to be continued with follow-up messages / message edits",
         ),
@@ -541,7 +544,7 @@ export const definition = {
         .string()
         .optional()
         .describe("Filter runs by a metadata value (value:key)"),
-      promptTemplateId: z.string().optional(),
+      configId: z.string().optional(),
     }),
     responses: {
       200: z.array(
@@ -554,8 +557,8 @@ export const definition = {
             .enum(["pending", "running", "paused", "done", "failed"])
             .nullable(),
           test: z.boolean(),
-          promptTemplateId: z.string().nullable(),
-          promptTemplateVersion: z.number().nullable(),
+          configId: z.string().nullable(),
+          configVersion: z.number().nullable(),
           feedbackScore: z.number().nullable(),
         }),
       ),
@@ -1026,44 +1029,33 @@ export const definition = {
       401: z.undefined(),
     },
   },
-  generatePromptTemplate: {
+  getRunConfig: {
     method: "GET",
-    path: "/clusters/:clusterId/prompt-templates/generate",
-    headers: z.object({ authorization: z.string() }),
-    query: z.object({
-      runId: z.string(),
-      messageId: z.string().optional(),
-    }),
-    responses: {
-      200: z.object({
-        name: z.string(),
-        prompt: z.string(),
-        attachedFunctions: z.array(z.string()),
-        resultSchema: anyObject.nullable().optional(),
-      }),
-    },
-  },
-  getPromptTemplate: {
-    method: "GET",
-    path: "/clusters/:clusterId/prompt-templates/:templateId",
+    path: "/clusters/:clusterId/run-configs/:configId",
     headers: z.object({ authorization: z.string() }),
     responses: {
       200: z.object({
         id: z.string(),
         clusterId: z.string(),
         name: z.string(),
-        prompt: z.string(),
+        initialPrompt: z.string().nullable(),
+        systemPrompt: z.string().nullable(),
         attachedFunctions: z.array(z.string()),
         resultSchema: anyObject.nullable(),
+        inputSchema: anyObject.nullable(),
+        public: z.boolean(),
         createdAt: z.date(),
         updatedAt: z.date(),
         versions: z.array(
           z.object({
             version: z.number(),
             name: z.string(),
-            prompt: z.string(),
+            initialPrompt: z.string().nullable(),
+            systemPrompt: z.string().nullable(),
             attachedFunctions: z.array(z.string()),
             resultSchema: anyObject.nullable(),
+            inputSchema: anyObject.nullable(),
+            public: z.boolean(),
           }),
         ),
       }),
@@ -1072,21 +1064,27 @@ export const definition = {
     },
     pathParams: z.object({
       clusterId: z.string(),
-      templateId: z.string(),
+      configId: z.string(),
     }),
     query: z.object({
       withPreviousVersions: z.enum(["true", "false"]).default("false"),
     }),
   },
-  createPromptTemplate: {
+  createRunConfig: {
     method: "POST",
-    path: "/clusters/:clusterId/prompt-templates",
+    path: "/clusters/:clusterId/run-configs",
     headers: z.object({ authorization: z.string() }),
     body: z.object({
       name: z.string(),
-      prompt: z.string(),
+      initialPrompt: z.string().optional(),
+      systemPrompt: z
+        .string()
+        .optional()
+        .describe("The initial system prompt for the run."),
       attachedFunctions: z.array(z.string()).optional(),
       resultSchema: anyObject.optional(),
+      inputSchema: z.object({}).passthrough().optional().nullable(),
+      public: z.boolean(),
     }),
     responses: {
       201: z.object({ id: z.string() }),
@@ -1096,26 +1094,33 @@ export const definition = {
       clusterId: z.string(),
     }),
   },
-  upsertPromptTemplate: {
+  upsertRunConfig: {
     method: "PUT",
-    path: "/clusters/:clusterId/prompt-templates/:templateId",
+    path: "/clusters/:clusterId/run-configs/:configId",
     headers: z.object({ authorization: z.string() }),
     pathParams: z.object({
       clusterId: z.string(),
-      templateId: z.string().regex(userDefinedIdRegex),
+      configId: z.string().regex(userDefinedIdRegex),
     }),
     body: z.object({
       name: z.string().optional(),
-      prompt: z.string().optional(),
+      initialPrompt: z.string().optional(),
+      systemPrompt: z
+        .string()
+        .optional()
+        .describe("The initial system prompt for the run."),
       attachedFunctions: z.array(z.string()).optional(),
       resultSchema: z.object({}).passthrough().optional().nullable(),
+      inputSchema: z.object({}).passthrough().optional().nullable(),
+      public: z.boolean(),
     }),
     responses: {
       200: z.object({
         id: z.string(),
         clusterId: z.string(),
         name: z.string(),
-        prompt: z.string(),
+        initialPrompt: z.string().nullable(),
+        systemPrompt: z.string().nullable(),
         attachedFunctions: z.array(z.string()),
         resultSchema: z.unknown().nullable(),
         createdAt: z.date(),
@@ -1125,9 +1130,9 @@ export const definition = {
       404: z.object({ message: z.string() }),
     },
   },
-  deletePromptTemplate: {
+  deleteRunConfig: {
     method: "DELETE",
-    path: "/clusters/:clusterId/prompt-templates/:templateId",
+    path: "/clusters/:clusterId/run-configs/:configId",
     headers: z.object({ authorization: z.string() }),
     responses: {
       204: z.undefined(),
@@ -1137,12 +1142,12 @@ export const definition = {
     body: z.undefined(),
     pathParams: z.object({
       clusterId: z.string(),
-      templateId: z.string(),
+      configId: z.string(),
     }),
   },
-  listPromptTemplates: {
+  listRunConfigs: {
     method: "GET",
-    path: "/clusters/:clusterId/prompt-templates",
+    path: "/clusters/:clusterId/run-configs",
     headers: z.object({ authorization: z.string() }),
     responses: {
       200: z.array(
@@ -1150,7 +1155,8 @@ export const definition = {
           id: z.string(),
           clusterId: z.string(),
           name: z.string(),
-          prompt: z.string(),
+          initialPrompt: z.string().nullable(),
+          systemPrompt: z.string().nullable(),
           attachedFunctions: z.array(z.string()),
           resultSchema: z.unknown().nullable(),
           createdAt: z.date(),
@@ -1163,9 +1169,9 @@ export const definition = {
       clusterId: z.string(),
     }),
   },
-  searchPromptTemplates: {
+  searchRunConfigs: {
     method: "GET",
-    path: "/clusters/:clusterId/prompt-templates/search",
+    path: "/clusters/:clusterId/run-configs/search",
     headers: z.object({ authorization: z.string() }),
     query: z.object({
       search: z.string(),
@@ -1176,7 +1182,7 @@ export const definition = {
           id: z.string(),
           clusterId: z.string(),
           name: z.string(),
-          prompt: z.string(),
+          initialPrompt: z.string(),
           attachedFunctions: z.array(z.string()),
           resultSchema: z.unknown().nullable(),
           createdAt: z.date(),
@@ -1190,9 +1196,9 @@ export const definition = {
       clusterId: z.string(),
     }),
   },
-  getTemplateMetrics: {
+  getRunConfigMetrics: {
     method: "GET",
-    path: "/clusters/:clusterId/prompt-templates/:templateId/metrics",
+    path: "/clusters/:clusterId/run-configs/:configId/metrics",
     headers: z.object({ authorization: z.string() }),
     responses: {
       200: z.array(
@@ -1207,7 +1213,7 @@ export const definition = {
     },
     pathParams: z.object({
       clusterId: z.string(),
-      templateId: z.string(),
+      configId: z.string(),
     }),
   },
   createClusterKnowledgeArtifact: {
