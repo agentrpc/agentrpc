@@ -417,16 +417,22 @@ export const definition = {
         .describe(
           "When provided, the run will be marked as as a test / evaluation",
         ),
-      template: z
+      config: z
         .object({
-          id: z.string().describe("The prompt template ID"),
+          id: z.string().describe("The run configuration ID"),
           input: z
             .object({})
             .passthrough()
             .describe(
-              "The input arguments, these should match what is described in the prompt template definition",
+              "The run configuration input arguments, the schema must match the run configuration input schema",
             )
             .optional(),
+        })
+        .optional(),
+      template: z
+        .object({
+          id: z.string().describe("DEPRECATED"),
+          input: z.object({}).passthrough().optional().describe("DEPRECATED"),
         })
         .optional()
         .describe("DEPRECATED"),
