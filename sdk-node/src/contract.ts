@@ -429,6 +429,9 @@ export const definition = {
             .optional(),
         })
         .optional(),
+      context: anyObject
+        .optional()
+        .describe("Additional context to propogate to all calls in the run"),
       template: z
         .object({
           id: z.string().describe("DEPRECATED"),
@@ -1400,7 +1403,8 @@ export const definition = {
           id: z.string(),
           function: z.string(),
           input: z.any(),
-          customerAuthContext: z.any().nullable(),
+          authContext: z.any().nullable(),
+          runContext: z.any().nullable(),
         }),
       ),
     },

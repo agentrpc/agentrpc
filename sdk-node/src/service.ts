@@ -16,7 +16,8 @@ type CallMessage = {
   id: string;
   function: string;
   input?: unknown;
-  customerAuthContext?: unknown;
+  authContext?: unknown;
+  runContext?: string;
 };
 
 export class Service {
@@ -270,7 +271,8 @@ export class Service {
     const result = await executeFn(
       registration.func,
       [args, {
-        customerAuthContext: call.customerAuthContext,
+        authContext: call.authContext,
+        runContext: call.runContext,
       }],
     );
 
