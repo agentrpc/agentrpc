@@ -58,7 +58,7 @@ Register a "sayHello" [function](https://docs.inferable.ai/pages/functions). Thi
 // Register a simple function (using the 'default' service)
 const sayHello = client.default.register({
   name: "sayHello",
-  func: async ({ to }: { to: string }) => {
+  func: async (input: { to: string }, _context) => {
     return `Hello, ${to}!`;
   },
   schema: {
@@ -97,6 +97,8 @@ const run = await client.run({
   }),
   // Optional: Subscribe an Inferable function to receive notifications when the run status changes
   //onStatusChange: { function: { function: "handler", service: "default" } },
+  // Optional: Pass additioanl context (passed to each function call)
+  //context: { foo: "bar" },
 });
 
 console.log("Run Started", {
