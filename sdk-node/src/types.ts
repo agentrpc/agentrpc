@@ -7,7 +7,7 @@ import { FunctionConfigSchema } from "./contract";
 export type ContextInput = {
   authContext?: unknown;
   runContext?: unknown;
-}
+};
 
 export type FunctionConfig = z.infer<typeof FunctionConfigSchema>;
 
@@ -63,7 +63,7 @@ export type FunctionRegistrationInput<
   name: string;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   func: (input: FunctionInput<T>, context: ContextInput) => any;
-  schema: FunctionSchema<T>;
+  schema?: FunctionSchema<T>;
   config?: FunctionConfig;
   description?: string;
 };

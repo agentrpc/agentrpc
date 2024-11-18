@@ -348,7 +348,8 @@ export class Inferable {
         name,
         serviceName: input.name,
         func,
-        inputSchema: schema.input,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        inputSchema: schema?.input ?? (z.object({}).passthrough() as any),
         config,
         description,
       });
