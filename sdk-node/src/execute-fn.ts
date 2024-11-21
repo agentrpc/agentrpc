@@ -1,9 +1,10 @@
 import { serializeError } from "./serialize-error";
 import { FunctionRegistration } from "./types";
+import { extractInterrupt } from "./util";
 
 export type Result<T = unknown> = {
   content: T;
-  type: "resolution" | "rejection";
+  type: "resolution" | "rejection" | "interrupt";
   functionExecutionTime?: number;
 };
 
@@ -14,6 +15,16 @@ export const executeFn = async (
   const start = Date.now();
   try {
     const result = await fn(...args);
+
+    const interupt = extractInterrupt(result);
+
+    if (interupt) {
+      return {
+        content: interupt,
+        type: "interrupt",
+        functionExecutionTime: Date.now() - start,
+      };
+    }
 
     return {
       content: result,

@@ -18,6 +18,7 @@ type CallMessage = {
   input?: unknown;
   authContext?: unknown;
   runContext?: string;
+  approved: boolean;
 };
 
 export class Service {
@@ -273,6 +274,7 @@ export class Service {
       [args, {
         authContext: call.authContext,
         runContext: call.runContext,
+        approved: call.approved,
       }],
     );
 

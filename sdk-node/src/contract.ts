@@ -22,6 +22,12 @@ const functionReference = z.object({
 
 const anyObject = z.object({}).passthrough();
 
+export const interruptSchema = z.discriminatedUnion("type", [
+  z.object({
+    type: z.literal("approval"),
+  }),
+]);
+
 export const blobSchema = z.object({
   id: z.string(),
   name: z.string(),
@@ -44,6 +50,24 @@ export const VersionedTextsSchema = z.object({
       content: z.string(),
     }),
   ),
+});
+
+export const integrationSchema = z.object({
+  toolhouse: z
+    .object({
+      apiKey: z.string(),
+    })
+    .optional()
+    .nullable(),
+  langfuse: z
+    .object({
+      publicKey: z.string(),
+      secretKey: z.string(),
+      baseUrl: z.string(),
+      sendMessagePayloads: z.boolean(),
+    })
+    .optional()
+    .nullable(),
 });
 
 export const genericMessageDataSchema = z
@@ -118,6 +142,7 @@ export const FunctionConfigSchema = z.object({
     .optional(),
   retryCountOnStall: z.number().optional(),
   timeoutSeconds: z.number().optional(),
+  // Deprecated
   requiresApproval: z.boolean().default(false).optional(),
   private: z.boolean().default(false).optional(),
 });
@@ -158,6 +183,26 @@ export const definition = {
         status: z.string(),
       }),
     },
+  },
+  createCallApproval: {
+    method: "POST",
+    path: "/clusters/:clusterId/calls/:callId/approval",
+    headers: z.object({
+      authorization: z.string(),
+    }),
+    pathParams: z.object({
+      clusterId: z.string(),
+      callId: z.string(),
+    }),
+    responses: {
+      204: z.undefined(),
+      404: z.object({
+        message: z.string(),
+      }),
+    },
+    body: z.object({
+      approved: z.boolean(),
+    }),
   },
   createCallBlob: {
     method: "POST",
@@ -233,6 +278,37 @@ export const definition = {
         .describe("Human readable description of the cluster"),
     }),
   },
+  upsertIntegrations: {
+    method: "PUT",
+    path: "/clusters/:clusterId/integrations",
+    headers: z.object({
+      authorization: z.string(),
+    }),
+    responses: {
+      200: z.undefined(),
+      401: z.undefined(),
+      400: z.object({
+        issues: z.array(z.any()),
+      }),
+    },
+    pathParams: z.object({
+      clusterId: z.string(),
+    }),
+    body: integrationSchema,
+  },
+  getIntegrations: {
+    method: "GET",
+    path: "/clusters/:clusterId/integrations",
+    headers: z.object({
+      authorization: z.string(),
+    }),
+    responses: {
+      200: integrationSchema,
+    },
+    pathParams: z.object({
+      clusterId: z.string(),
+    }),
+  },
   deleteCluster: {
     method: "DELETE",
     path: "/clusters/:clusterId",
@@ -266,6 +342,8 @@ export const definition = {
         .describe(
           "Enable additional logging (Including prompts and results) for use by Inferable support",
         ),
+      enableRunConfigs: z.boolean().optional(),
+      enableKnowledgebase: z.boolean().optional(),
     }),
   },
   getCluster: {
@@ -282,6 +360,8 @@ export const definition = {
         additionalContext: VersionedTextsSchema.nullable(),
         createdAt: z.date(),
         debug: z.boolean(),
+        enableRunConfigs: z.boolean(),
+        enableKnowledgebase: z.boolean(),
         lastPingAt: z.date().nullable(),
       }),
       401: z.undefined(),
@@ -938,6 +1018,8 @@ export const definition = {
             service: z.string(),
             resultType: z.string().nullable(),
             createdAt: z.date(),
+            approved: z.boolean().nullable(),
+            approvalRequested: z.boolean().nullable(),
           }),
         ),
         inputRequests: z.array(
@@ -1306,6 +1388,25 @@ export const definition = {
       401: z.undefined(),
     },
   },
+  getAllKnowledgeArtifacts: {
+    method: "GET",
+    path: "/clusters/:clusterId/knowledge-export",
+    headers: z.object({ authorization: z.string() }),
+    responses: {
+      200: z.array(
+        z.object({
+          id: z.string(),
+          data: z.string(),
+          tags: z.array(z.string()),
+          title: z.string(),
+        }),
+      ),
+      401: z.undefined(),
+    },
+    pathParams: z.object({
+      clusterId: z.string(),
+    }),
+  },
   createRunRetry: {
     method: "POST",
     path: "/clusters/:clusterId/runs/:runId/retry",
@@ -1344,7 +1445,7 @@ export const definition = {
       200: z.object({
         id: z.string(),
         result: z.any().nullable(),
-        resultType: z.enum(["resolution", "rejection"]).nullable(),
+        resultType: z.enum(["resolution", "rejection", "interrupt"]).nullable(),
         status: z.enum(["pending", "running", "success", "failure", "stalled"]),
       }),
     },
@@ -1366,7 +1467,7 @@ export const definition = {
     },
     body: z.object({
       result: z.any(),
-      resultType: z.enum(["resolution", "rejection"]),
+      resultType: z.enum(["resolution", "rejection", "interrupt"]),
       meta: z.object({
         functionExecutionTime: z.number().optional(),
       }),
@@ -1405,6 +1506,7 @@ export const definition = {
           input: z.any(),
           authContext: z.any().nullable(),
           runContext: z.any().nullable(),
+          approved: z.boolean(),
         }),
       ),
     },

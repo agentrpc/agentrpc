@@ -31,6 +31,7 @@ export {
   validateFunctionSchema,
   validateFunctionArgs,
   blob,
+  approvalRequest
 } from "./util";
 
 export { createApiClient } from "./create-client";

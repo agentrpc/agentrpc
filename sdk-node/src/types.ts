@@ -7,6 +7,7 @@ import { FunctionConfigSchema } from "./contract";
 export type ContextInput = {
   authContext?: unknown;
   runContext?: unknown;
+  approved: boolean;
 };
 
 export type FunctionConfig = z.infer<typeof FunctionConfigSchema>;
