@@ -22,7 +22,10 @@ export const masked = () => {
   throw new Error("masked is not implemented");
 };
 
-export { statusChangeSchema } from "./types";
+export {
+  statusChangeSchema,
+  ContextInput,
+} from "./types";
 
 export {
   validateDescription,
