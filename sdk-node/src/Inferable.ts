@@ -301,6 +301,28 @@ export class Inferable {
           return pollResult.body;
         }
       },
+      /**
+       * Retrieves the messages for a run.
+       */
+      messages: async () => {
+        const calls = await this.client.listMessages({
+          params: {
+            clusterId: await this.getClusterId(),
+            runId: runResult.body.id,
+          },
+        });
+
+        if (calls.status !== 200) {
+          throw new InferableError("Failed to get run messages", {
+            body: calls.body,
+            status: calls.status,
+          });
+        }
+
+        return {
+          messages: calls.body,
+        };
+      },
     };
   }
 
