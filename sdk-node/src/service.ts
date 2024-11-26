@@ -205,7 +205,7 @@ export class Service {
             body: blob,
           })
           .then(async (res) => {
-            if (res.status === 204) {
+            if (res.status === 201) {
               log("Uploaded blob", call.id, call.function);
             } else {
               throw new InferableError(`Failed to upload blob: ${res.status}`, {
@@ -269,24 +269,26 @@ export class Service {
       });
     }
 
-    const result = await executeFn(
-      registration.func,
-      [args, {
+    const result = await executeFn(registration.func, [
+      args,
+      {
         authContext: call.authContext,
         runContext: call.runContext,
         approved: call.approved,
-      }],
-    );
+      },
+    ]);
 
     await onComplete(result);
   }
 }
 
-export const registerMachine = async (client: ReturnType<typeof createApiClient>,
+export const registerMachine = async (
+  client: ReturnType<typeof createApiClient>,
   service?: {
     name: string;
     functions: FunctionRegistration[];
-  }) => {
+  },
+) => {
   log("registering machine", {
     service: service?.name,
     functions: service?.functions.map((f) => f.name),
@@ -319,5 +321,4 @@ export const registerMachine = async (client: ReturnType<typeof createApiClient>
   return {
     clusterId: registerResult.body.clusterId,
   };
-}
-
+};
