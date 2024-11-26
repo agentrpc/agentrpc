@@ -532,7 +532,7 @@ export class Inferable {
     };
   }
 
-  private async getClusterId() {
+  public async getClusterId() {
     if (!this.clusterId) {
       // Call register machine without any services to test API key and get clusterId
       const registerResult = await registerMachine(this.client);
