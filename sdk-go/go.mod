@@ -1,6 +1,6 @@
 module github.com/inferablehq/inferable/sdk-go
 
-go 1.22
+go 1.22.9
 
 require (
 	github.com/invopop/jsonschema v0.12.0
