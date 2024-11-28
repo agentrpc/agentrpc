@@ -1,6 +1,6 @@
 {
   "name": "inferable",
-  "version": "0.30.54",
+  "version": "0.30.55",
   "description": "Javascript SDK for inferable.ai",
   "main": "bin/index.js",
   "scripts": {
