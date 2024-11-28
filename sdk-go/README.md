@@ -157,7 +157,7 @@ The following code will create an [Inferable run](https://docs.inferable.ai/page
 
 ## Support
 
-For support or questions, please [create an issue in the repository](https://github.com/inferablehq/inferable/issues) or [join the Discord](https://go.inferable.ai/discord)
+For support or questions, please [create an issue in the repository](https://github.com/inferablehq/inferable/issues).
 
 ## Contributing
 
