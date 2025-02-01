@@ -2,8 +2,9 @@ import debug from "debug";
 import path from "path";
 import { z } from "zod";
 import zodToJsonSchema from "zod-to-json-schema";
+import { onStatusChangeSchema } from "./contract";
 import { createApiClient } from "./create-client";
-import { InferableError, PollTimeoutError } from "./errors";
+import { InferableAPIError, InferableError, PollTimeoutError } from "./errors";
 import * as links from "./links";
 import { machineId } from "./machine-id";
 import { Service, registerMachine } from "./service";
@@ -21,8 +22,8 @@ import {
   validateDescription,
   validateFunctionName,
   validateFunctionSchema,
-  validateServiceName,
 } from "./util";
+import { Workflow } from "./workflows/workflow";
 
 // Custom json formatter
 debug.formatters.J = (json) => {
@@ -61,7 +62,7 @@ export const log = debug("inferable:client");
  */
 export class Inferable {
   static getVersion(): string {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    // eslint-disable-next-line @typescript-eslint/no-var-requires, @typescript-eslint/no-require-imports
     return require(path.join(__dirname, "..", "package.json")).version;
   }
 
@@ -212,11 +213,7 @@ export class Inferable {
     model?: "claude-3-5-sonnet" | "claude-3-haiku";
     resultSchema?: z.ZodType<unknown> | JsonSchemaInput;
     attachedFunctions?: Array<{ service: string; function: string }>;
-    onStatusChange?: {
-      statuses?: Array<"pending" | "running" | "paused" | "done" | "failed">;
-      function?: { service: string; function: string };
-      webhook?: string;
-    };
+    onStatusChange?: z.infer<typeof onStatusChangeSchema>;
     tags?: Record<string, string>;
     test?: {
       enabled?: boolean;
@@ -250,6 +247,7 @@ export class Inferable {
 
     return {
       id: runResult.body.id,
+      run: runResult.body,
       /**
        * Polls until the run reaches a terminal state (!= "pending" && != "running" && != "paused") or maxWaitTime is reached.
        * @param maxWaitTime The maximum amount of time to wait for the run to reach a terminal state. Defaults to 60 seconds.
@@ -410,8 +408,6 @@ export class Inferable {
       | FunctionRegistrationInput<T>[]
       | Promise<FunctionRegistrationInput<T>[]>;
   }): RegisteredService {
-    validateServiceName(input.name);
-
     const register: RegisteredService["register"] = ({
       name,
       func,
@@ -575,4 +571,45 @@ export class Inferable {
 
     return this.clusterId;
   }
+
+  public getClient() {
+    return this.client;
+  }
+
+  workflows = {
+    create: <TInput extends z.ZodTypeAny>({
+      name,
+      inputSchema,
+    }: {
+      name: string;
+      inputSchema: TInput;
+    }) => {
+      return new Workflow({
+        name,
+        inferable: this,
+        inputSchema,
+      });
+    },
+    run: async <TInput extends { executionId: string }>(
+      name: string,
+      input: TInput,
+    ): Promise<void> => {
+      const clusterId = await this.getClusterId();
+
+      const result = await this.client.createWorkflowExecution({
+        params: {
+          clusterId,
+          workflowName: name,
+        },
+        body: input,
+      });
+
+      if (result.status !== 201) {
+        throw new InferableAPIError(
+          "Failed to create workflow execution",
+          result,
+        );
+      }
+    },
+  };
 }
