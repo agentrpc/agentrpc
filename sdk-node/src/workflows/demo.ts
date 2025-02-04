@@ -82,6 +82,12 @@ import { helpers } from "./workflow";
           }),
         });
 
+        ctx.effect(`logFirstAnalyzeLoan`, async () => {
+          console.log(
+            `This side effect will only be run once. It's running for ${record.id}`,
+          );
+        });
+
         return agent2.run({
           data: {
             loanId: record.id,
@@ -116,8 +122,11 @@ import { helpers } from "./workflow";
         },
       });
 
-    // this is a side-effect, albeit a useful one
-    console.log(riskProfile);
+    ctx.effect("logFinalResult", async () => {
+      console.log("--------------------------------");
+      console.log(riskProfile);
+      console.log("--------------------------------");
+    });
   });
 
   await workflow.listen();

@@ -26,6 +26,10 @@ type AgentConfig<TResult> = {
 };
 
 type WorkflowContext<TInput> = {
+  effect: (
+    name: string,
+    fn: (ctx: WorkflowContext<TInput>) => Promise<void>,
+  ) => Promise<void>;
   agent: <TAgentResult = unknown>(
     config: AgentConfig<TAgentResult>,
   ) => {
@@ -130,6 +134,44 @@ export class Workflow<TInput extends WorkflowInput, name extends string> {
     });
 
     return {
+      effect: async (
+        name: string,
+        fn: (ctx: WorkflowContext<TInput>) => Promise<void>,
+      ) => {
+        const ctx = this.createContext(version, executionId, input);
+
+        const rand = crypto.randomUUID();
+
+        // TODO: async/retry
+        const result = await this.inferable.getClient().setClusterKV({
+          params: {
+            clusterId: await this.inferable.getClusterId(),
+            key: `${executionId}.${name}`,
+          },
+          body: {
+            value: rand,
+            onConflict: "doNothing",
+          },
+        });
+
+        if (result.status !== 200) {
+          throw new Error("Failed to set effect");
+        }
+
+        const canRun = result.body.value === rand;
+
+        if (canRun) {
+          log(`Effect ${name} can run. Running...`);
+          try {
+            await fn(ctx);
+            log(`Effect ${name} ran successfully`);
+          } catch (e) {
+            log(`Effect ${name} failed`, { error: e });
+          }
+        } else {
+          log(`Effect ${name} has already been run`);
+        }
+      },
       agent: <TAgentResult = unknown>(config: AgentConfig<TAgentResult>) => {
         return {
           run: async (params: { data: { [key: string]: unknown } }) => {
