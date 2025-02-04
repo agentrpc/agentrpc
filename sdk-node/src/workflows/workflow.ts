@@ -4,6 +4,9 @@ import { RegisteredService } from "../types";
 import zodToJsonSchema from "zod-to-json-schema";
 import { cyrb53 } from "../util/cybr53";
 import { InferableAPIError } from "../errors";
+import debug from "debug";
+
+const log = debug("inferable:workflows");
 
 type WorkflowInput = {
   executionId: string;
@@ -15,22 +18,20 @@ type WorkflowConfig<TInput extends WorkflowInput, name extends string> = {
   inputSchema: z.ZodType<TInput>;
 };
 
-type AgentConfig<TInput, TResult> = {
+type AgentConfig<TResult> = {
   name: string;
-  systemPrompt: string;
+  systemPrompt?: string;
   resultSchema?: z.ZodType<TResult>;
-  input?: TInput;
   runId?: string;
 };
 
 type WorkflowContext<TInput> = {
-  agent: <
-    TAgentInput extends { [key: string]: unknown },
-    TAgentResult = unknown,
-  >(
-    config: AgentConfig<TAgentInput, TAgentResult>,
+  agent: <TAgentResult = unknown>(
+    config: AgentConfig<TAgentResult>,
   ) => {
-    run: () => Promise<{ result: TAgentResult }>;
+    run: (params: {
+      data: { [key: string]: unknown };
+    }) => Promise<{ result: TAgentResult }>;
   };
   input: TInput;
 };
@@ -50,6 +51,17 @@ class WorkflowTerminableError extends Error {
     this.name = "WorkflowTerminableError";
   }
 }
+
+export const helpers = {
+  structuredPrompt: (params: { facts: string[]; goals: string[] }): string => {
+    return [
+      "# Facts",
+      ...params.facts.map((f) => `- ${f}`),
+      "# Your goals",
+      ...params.goals.map((g) => `- GOAL: ${g}`),
+    ].join("\n");
+  },
+};
 
 export class Workflow<TInput extends WorkflowInput, name extends string> {
   private name: string;
@@ -72,9 +84,16 @@ export class Workflow<TInput extends WorkflowInput, name extends string> {
       define: (
         handler: (ctx: WorkflowContext<TInput>, input: TInput) => Promise<void>,
       ) => {
+        log("Defining workflow handler", { version, name: this.name });
         this.versionHandlers.set(version, handler);
       },
       run: async (input: TInput) => {
+        log("Running workflow", {
+          version,
+          name: this.name,
+          executionId: input.executionId,
+        });
+
         const result = await this.inferable
           .getClient()
           .createWorkflowExecution({
@@ -87,6 +106,13 @@ export class Workflow<TInput extends WorkflowInput, name extends string> {
             },
           });
 
+        log("Workflow execution created", {
+          version,
+          name: this.name,
+          executionId: input.executionId,
+          status: result.status,
+        });
+
         return result;
       },
     };
@@ -97,22 +123,23 @@ export class Workflow<TInput extends WorkflowInput, name extends string> {
     executionId: string,
     input: TInput,
   ): WorkflowContext<TInput> {
+    log("Creating workflow context", {
+      version,
+      name: this.name,
+      executionId,
+    });
+
     return {
-      agent: <
-        TAgentInput extends { [key: string]: unknown },
-        TAgentResult = unknown,
-      >(
-        config: AgentConfig<TAgentInput, TAgentResult>,
-      ) => {
+      agent: <TAgentResult = unknown>(config: AgentConfig<TAgentResult>) => {
         return {
-          /**
-           * Runs the agent.
-           * @param params - The parameters for the agent.
-           * @param params.input - The input for the agent. Must be a valid JSON object.
-           * @param params.runId - The runId for the agent. A unique identifier for the agent run. If not provided, it will be generated based on the agent's configuration and the input.
-           * @returns The result of the agent.
-           */
-          run: async () => {
+          run: async (params: { data: { [key: string]: unknown } }) => {
+            log("Running agent in workflow", {
+              version,
+              name: this.name,
+              executionId,
+              agentName: config.name,
+            });
+
             const resultSchema = config.resultSchema
               ? zodToJsonSchema(config.resultSchema)
               : undefined;
@@ -122,14 +149,13 @@ export class Workflow<TInput extends WorkflowInput, name extends string> {
               : `${executionId}.${config.name}.${cyrb53(
                   JSON.stringify([
                     config.systemPrompt,
+                    executionId,
                     resultSchema,
-                    config.input,
                     this.name,
                     version,
+                    params.data,
                   ]),
                 )}`;
-
-            console.log("---  Creating run", { runId, name: config.name });
 
             const result = await this.inferable.getClient().createRun({
               params: {
@@ -139,7 +165,6 @@ export class Workflow<TInput extends WorkflowInput, name extends string> {
                 id: runId,
                 systemPrompt: config.systemPrompt,
                 resultSchema,
-                context: config.input ? { input: config.input } : undefined,
                 onStatusChange: {
                   type: "workflow",
                   statuses: ["failed", "done"],
@@ -147,17 +172,26 @@ export class Workflow<TInput extends WorkflowInput, name extends string> {
                     executionId: executionId,
                   },
                 },
-                initialPrompt: JSON.stringify(config.input),
+                tags: {
+                  "workflow.name": this.name,
+                  "workflow.version": version.toString(),
+                  "workflow.executionId": executionId,
+                },
+                initialPrompt: JSON.stringify(params.data),
               },
             });
 
-            if (result.status !== 201) {
-              console.error("Failed to create run", {
-                runId,
-                status: result.status,
-                body: result.body,
-              });
+            log("Agent run completed", {
+              version,
+              name: this.name,
+              executionId,
+              agentName: config.name,
+              runId,
+              status: result.status,
+              result: result.body,
+            });
 
+            if (result.status !== 201) {
               // TODO: Add better error handling
               throw new InferableAPIError(
                 `Failed to create run: ${result.status}`,
@@ -184,6 +218,11 @@ export class Workflow<TInput extends WorkflowInput, name extends string> {
   }
 
   async listen() {
+    log("Starting workflow listeners", {
+      name: this.name,
+      versions: Array.from(this.versionHandlers.keys()),
+    });
+
     this.versionHandlers.forEach((handler, version) => {
       const s = this.inferable.service({
         name: `workflows-${this.name}-${version}`,
@@ -209,9 +248,12 @@ export class Workflow<TInput extends WorkflowInput, name extends string> {
     });
 
     await Promise.all(this.services.map((s) => s.start()));
+    log("Workflow listeners started", { name: this.name });
   }
 
   async unlisten() {
+    log("Stopping workflow listeners", { name: this.name });
     await Promise.all(this.services.map((s) => s.stop()));
+    log("Workflow listeners stopped", { name: this.name });
   }
 }
