@@ -4,14 +4,15 @@ import { createApiClient } from "./create-client";
 import { InferableAPIError, InferableError } from "./errors";
 import { serializeError } from "./serialize-error";
 import { executeFn, Result } from "./execute-fn";
-import { FunctionRegistration } from "./types";
-import { extractBlobs, validateFunctionArgs } from "./util";
+import { ToolRegistrationInput } from "./types";
+import { extractBlobs, isZodType, validateFunctionArgs } from "./util";
+import zodToJsonSchema from "zod-to-json-schema";
 
 const DEFAULT_RETRY_AFTER_SECONDS = 10;
 
 export const log = debug("inferable:client:polling-agent");
 
-type CallMessage = {
+type JobMessage = {
   id: string;
   function: string;
   input?: unknown;
@@ -20,12 +21,11 @@ type CallMessage = {
   approved: boolean;
 };
 
-export class Service {
-  public name: string;
+export class PollingAgent {
   public clusterId: string;
   public polling = false;
 
-  private functions: FunctionRegistration[] = [];
+  private tools: ToolRegistrationInput<any>[] = [];
 
   private client: ReturnType<typeof createApiClient>;
 
@@ -35,11 +35,9 @@ export class Service {
     endpoint: string;
     machineId: string;
     apiSecret: string;
-    service: string;
     clusterId: string;
-    functions: FunctionRegistration[];
+    tools: ToolRegistrationInput<any>[];
   }) {
-    this.name = options.service;
 
     this.client = createApiClient({
       baseUrl: options.endpoint,
@@ -47,24 +45,21 @@ export class Service {
       apiSecret: options.apiSecret,
     });
 
-    this.functions = options.functions;
+    this.tools = options.tools;
 
     this.clusterId = options.clusterId;
   }
 
   public async start() {
-    log("Starting polling service", { service: this.name });
-    await registerMachine(this.client, {
-      name: this.name,
-      functions: this.functions,
-    });
+    log("Starting polling agent");
+    await registerMachine(this.client, this.tools);
 
     // Purposefully not awaited
     this.runLoop();
   }
 
   public async stop(): Promise<void> {
-    log("Stopping polling agent", { service: this.name });
+    log("Stopping polling agent");
     this.polling = false;
   }
 
@@ -95,9 +90,7 @@ export class Service {
     }
 
     //@eslint-disable-next-line no-console
-    console.error("Quitting polling service", {
-      service: this.name,
-    });
+    console.error("Quitting polling agent")
   }
 
   private async pollIteration() {
@@ -105,12 +98,14 @@ export class Service {
       throw new Error("Failed to poll. Could not find clusterId");
     }
 
+    const tools = this.tools.map((fn) => fn.name);
+
     const pollResult = await this.client.listJobs({
       params: {
         clusterId: this.clusterId,
       },
       query: {
-        service: this.name,
+        tools: tools.join(","),
         status: "pending",
         acknowledge: true,
         limit: 10,
@@ -123,10 +118,7 @@ export class Service {
     }
 
     if (pollResult?.status === 410) {
-      await registerMachine(this.client, {
-        name: this.name,
-        functions: this.functions,
-      });
+      await registerMachine(this.client, this.tools);
     }
 
     if (pollResult?.status !== 200) {
@@ -149,12 +141,11 @@ export class Service {
     }
   }
 
-  private async processCall(call: CallMessage): Promise<void> {
-    const registration = this.functions.find((fn) => fn.name === call.function);
+  private async processCall(call: JobMessage): Promise<void> {
+    const registration = this.tools.find((fn) => fn.name === call.function);
 
     if (!registration) {
       log("Received call for unknown function", {
-        service: this.name,
         function: call.function,
       });
       return;
@@ -246,7 +237,6 @@ export class Service {
         "Function was called with invalid invalid format. Expected an object.",
         {
           function: call.function,
-          service: this.name,
         },
       );
 
@@ -296,26 +286,20 @@ export class Service {
 
 export const registerMachine = async (
   client: ReturnType<typeof createApiClient>,
-  service?: {
-    name: string;
-    functions: FunctionRegistration[];
-  },
+  tools?: ToolRegistrationInput<any>[]
 ) => {
   log("registering machine", {
-    service: service?.name,
-    functions: service?.functions.map((f) => f.name),
+    tools: tools?.map((f) => f.name),
   });
-
   const registerResult = await client.createMachine({
     headers: {
       "x-sentinel-no-mask": "1",
     },
     body: {
-      service: service?.name,
-      functions: service?.functions.map((func) => ({
+      tools: tools?.map((func) => ({
         name: func.name,
         description: func.description,
-        schema: func.schema.inputJson,
+        schema: JSON.stringify(isZodType(func.schema?.input) ? zodToJsonSchema(func.schema?.input) : func.schema?.input),
         config: func.config,
       })),
     },
