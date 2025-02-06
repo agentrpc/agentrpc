@@ -251,6 +251,7 @@ export class Workflow<TInput extends WorkflowInput, name extends string> {
                 clusterId: await this.getClusterId(),
               },
               body: {
+                name: `${this.name}.${config.name}`,
                 id: runId,
                 systemPrompt: config.systemPrompt,
                 resultSchema,
@@ -267,6 +268,7 @@ export class Workflow<TInput extends WorkflowInput, name extends string> {
                   "workflow.executionId": executionId,
                 },
                 initialPrompt: JSON.stringify(params.data),
+                interactive: false,
               },
             });
 
