@@ -21,7 +21,7 @@ const anyObject = z.object({}).passthrough();
 
 export const interruptSchema = z.discriminatedUnion("type", [
   z.object({
-    type: z.literal("approval"),
+    type: z.enum(["approval", "general"]),
   }),
 ]);
 
@@ -419,7 +419,7 @@ export const definition = {
         id: z.string(),
         result: z.any().nullable(),
         resultType: z.enum(["resolution", "rejection", "interrupt"]).nullable(),
-        status: z.enum(["pending", "running", "success", "failure", "stalled"]),
+        status: z.enum(["pending", "running", "success", "failure", "stalled", "interrupted"]),
       }),
     },
   },
@@ -889,7 +889,7 @@ export const definition = {
           name: z.string(),
           userId: z.string().nullable(),
           createdAt: z.date(),
-          type: z.enum(["simple", "agent"]),
+          type: z.enum(["single-step", "multi-step"]),
           status: z.enum(["pending", "running", "paused", "done", "failed"]).nullable(),
           test: z.boolean(),
           feedbackScore: z.number().nullable(),
@@ -911,7 +911,7 @@ export const definition = {
       200: z.object({
         id: z.string(),
         userId: z.string().nullable(),
-        type: z.enum(["simple", "agent"]).nullable(),
+        type: z.enum(["single-step", "multi-step"]).nullable(),
         status: z.enum(["pending", "running", "paused", "done", "failed"]).nullable(),
         failureReason: z.string().nullable(),
         test: z.boolean(),
@@ -1174,6 +1174,27 @@ export const definition = {
       200: z.undefined(),
     },
   },
+
+  // List Workflows
+  listWorkflows: {
+    method: "GET",
+    path: "/clusters/:clusterId/workflows",
+    pathParams: z.object({
+      clusterId: z.string(),
+    }),
+    headers: z.object({ authorization: z.string() }),
+    responses: {
+      200: z.array(
+        z.object({
+          name: z.string(),
+          version: z.number(),
+        })
+      ),
+      401: z.undefined(),
+    },
+  },
+
+  // Workflow Endpoints
   createWorkflowExecution: {
     method: "POST",
     path: "/clusters/:clusterId/workflows/:workflowName/executions",
@@ -1191,58 +1212,30 @@ export const definition = {
       201: z.object({ jobId: z.string() }),
     },
   },
-  getWorkflowExecutionEvents: {
+
+  listWorkflowExecutions: {
     method: "GET",
-    path: "/clusters/:clusterId/workflows/:workflowName/executions/:executionId/events",
-    headers: z.object({ authorization: z.string() }),
+    path: "/clusters/:clusterId/workflows/:workflowName",
     pathParams: z.object({
       clusterId: z.string(),
       workflowName: z.string(),
-      executionId: z.string(),
     }),
-    query: z.object({
-      after: z.string().optional(),
-    }),
+    headers: z.object({ authorization: z.string() }),
     responses: {
-      200: z.object({
-        handlerJobEvents: z.array(
-          z.object({
-            id: z.string(),
-            clusterId: z.string(),
-            type: z.string(),
-            jobId: z.string().nullable(),
-            machineId: z.string().nullable(),
-            createdAt: z.date(),
-            targetFn: z.string().nullable(),
-            resultType: z.string().nullable(),
-            status: z.string().nullable(),
-            workflowId: z.string().nullable(),
-          })
-        ),
-        associatedRuns: z.array(
-          z.object({
-            id: z.string(),
-            status: z.string(),
-            createdAt: z.date(),
-          })
-        ),
-        runEvents: z.array(
-          z.object({
-            id: z.string(),
-            clusterId: z.string(),
-            type: z.string(),
-            jobId: z.string().nullable(),
-            machineId: z.string().nullable(),
-            createdAt: z.date(),
-            targetFn: z.string().nullable(),
-            resultType: z.string().nullable(),
-            status: z.string().nullable(),
-            workflowId: z.string().nullable(),
-          })
-        ),
-      }),
+      200: z.array(
+        z.object({
+          id: z.string(),
+          workflowName: z.string(),
+          workflowVersion: z.number(),
+          createdAt: z.date(),
+          updatedAt: z.date(),
+        })
+      ),
+      401: z.undefined(),
     },
   },
+
+  // KV Endpoints
   setClusterKV: {
     method: "PUT",
     path: "/clusters/:clusterId/keys/:key",
@@ -1261,6 +1254,7 @@ export const definition = {
       }),
     },
   },
+
   getClusterKV: {
     method: "GET",
     path: "/clusters/:clusterId/keys/:key/value",
@@ -1275,6 +1269,8 @@ export const definition = {
       }),
     },
   },
+
+  // Tool Endpoints
   listTools: {
     method: "GET",
     path: "/clusters/:clusterId/tools",
