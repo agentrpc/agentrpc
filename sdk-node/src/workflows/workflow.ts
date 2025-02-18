@@ -88,7 +88,7 @@ export class Workflow<TInput extends WorkflowInput, name extends string> {
   private inputSchema: z.ZodType<TInput>;
   private versionHandlers: Map<
     number,
-    (input: TInput, ctx: WorkflowContext<TInput>) => Promise<unknown>
+    (ctx: WorkflowContext<TInput>, input: TInput) => Promise<unknown>
   > = new Map();
   private pollingAgent: PollingAgent | undefined;
   private getClusterId: () => Promise<string>;
@@ -117,7 +117,7 @@ export class Workflow<TInput extends WorkflowInput, name extends string> {
   version(version: number) {
     return {
       define: (
-        handler: (input: TInput, ctx: WorkflowContext<TInput>) => Promise<unknown>,
+        handler: (ctx: WorkflowContext<TInput>, input: TInput) => Promise<unknown>,
       ) => {
         this.logger?.info("Defining workflow handler", {
           version,
@@ -366,7 +366,7 @@ export class Workflow<TInput extends WorkflowInput, name extends string> {
           }
           const ctx = this.createWorkflowContext(version, input.executionId, input, jobCtx);
           try {
-            return await handler(input, ctx);
+            return await handler(ctx, input);
           } catch (e) {
             if (e instanceof WorkflowPausableError) {
               return Interrupt.general();
