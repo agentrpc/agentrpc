@@ -16,7 +16,7 @@ const Version = "0.1.44"
 
 const (
 	// DefaultAPIEndpoint is the default endpoint for the Inferable API.
-	DefaultAPIEndpoint = "https://api.inferable.ai"
+	DefaultAPIEndpoint = "https://api.agentrpc.com"
 )
 
 // Inferable is the main client for interacting with the Inferable platform.

@@ -70,7 +70,7 @@ export class Inferable {
    * Initializes a new Inferable instance.
    * @param apiSecret The API Secret for your Inferable cluster. If not provided, it will be read from the `INFERABLE_API_SECRET` environment variable.
    * @param options Additional options for the Inferable client.
-   * @param options.endpoint The endpoint for the Inferable cluster. Defaults to https://api.inferable.ai.
+   * @param options.endpoint The endpoint for the Inferable cluster. Defaults to https://api.agentrpc.com.
    *
    * @example
    * ```ts
@@ -115,7 +115,7 @@ export class Inferable {
     this.endpoint =
       options?.endpoint ||
       process.env.INFERABLE_API_ENDPOINT ||
-      "https://api.inferable.ai";
+      "https://api.agentrpc.com";
 
     this.machineId = options?.machineId || machineId();
 
