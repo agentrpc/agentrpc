@@ -1,7 +1,7 @@
 import debug from "debug";
 import { z } from "zod";
 import { createApiClient } from "./create-client";
-import { InferableAPIError, InferableError } from "./errors";
+import { AgentRPCAPIError, AgentRPCError } from "./errors";
 import { serializeError } from "./serialize-error";
 import { executeFn, Result } from "./execute-fn";
 import { ToolRegistrationInput } from "./types";
@@ -16,9 +16,6 @@ type JobMessage = {
   id: string;
   function: string;
   input?: unknown;
-  authContext?: unknown;
-  runContext?: string;
-  approved: boolean;
 };
 
 export class PollingAgent {
@@ -119,7 +116,7 @@ export class PollingAgent {
     }
 
     if (pollResult?.status !== 200) {
-      throw new InferableError("Failed to fetch calls", {
+      throw new AgentRPCError("Failed to fetch calls", {
         status: pollResult?.status,
         body: pollResult?.body,
       });
@@ -180,7 +177,7 @@ export class PollingAgent {
           if (res.status === 204) {
             log("Completed job", call.id, call.function);
           } else {
-            throw new InferableError(`Failed to persist call: ${res.status}`, {
+            throw new AgentRPCError(`Failed to persist call: ${res.status}`, {
               jobId: call.id,
               body: JSON.stringify(res.body),
             });
@@ -193,7 +190,7 @@ export class PollingAgent {
     log("Executing fn", {
       id: call.id,
       function: call.function,
-      registeredFn: registration.func,
+      registeredFn: registration.handler,
       args,
     });
 
@@ -236,14 +233,7 @@ export class PollingAgent {
       });
     }
 
-    const result = await executeFn(registration.func, [
-      args,
-      {
-        authContext: call.authContext,
-        runContext: call.runContext,
-        approved: call.approved,
-      },
-    ]);
+    const result = await executeFn(registration.handler, [args]);
 
     await onComplete(result);
   }
@@ -273,7 +263,7 @@ export const registerMachine = async (
 
   if (registerResult?.status !== 200) {
     log("Failed to register machine", registerResult);
-    throw new InferableAPIError("Failed to register machine", registerResult);
+    throw new AgentRPCAPIError("Failed to register machine", registerResult);
   }
 
   return {

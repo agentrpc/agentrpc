@@ -1,6 +1,4 @@
-import { z } from "zod";
-
-export class InferableError extends Error {
+export class AgentRPCError extends Error {
   static JOB_AUTHCONTEXT_INVALID =
     "Function requires authentication but no auth context was provided.";
 
@@ -13,14 +11,14 @@ export class InferableError extends Error {
   }
 }
 
-export class PollTimeoutError extends InferableError {
+export class PollTimeoutError extends AgentRPCError {
   constructor(message: string, meta?: { [key: string]: unknown }) {
     super(message, meta);
     this.name = "PollTimeoutError";
   }
 }
 
-export class InferableAPIError extends Error {
+export class AgentRPCAPIError extends Error {
   constructor(message: string, response: unknown) {
     let msg = message;
 

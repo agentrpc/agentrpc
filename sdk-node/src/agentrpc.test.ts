@@ -1,22 +1,22 @@
 import assert from "assert";
 import { z } from "zod";
-import { Inferable } from "./Inferable";
+import { AgentRPC } from "./agentrpc";
 import {
   TEST_CLUSTER_ID,
   TEST_API_SECRET,
   client,
-  inferableInstance,
+  testInstance,
 } from "./tests/utils";
 import { setupServer } from "msw/node";
 import { http, HttpResponse, passthrough } from "msw";
 
 const testService = () => {
-  const client = inferableInstance();
+  const client = testInstance();
   const prefix = `test${Math.random().toString(36).substring(2, 15)}`;
 
-  client.tools.register({
+  client.register({
     name: `${prefix}_echo`,
-    func: async (input: { text: string }) => {
+    handler: async (input: { text: string }) => {
       return { echo: input.text };
     },
     schema: {
@@ -26,9 +26,9 @@ const testService = () => {
     },
   });
 
-  client.tools.register({
+  client.register({
     name: `${prefix}_error`,
-    func: async (_input) => {
+    handler: async (_input) => {
       throw new Error("This is an error");
     },
     schema: {
@@ -44,7 +44,7 @@ const testService = () => {
   };
 };
 
-describe("Inferable", () => {
+describe("AgentRPC", () => {
   const env = process.env;
   beforeEach(() => {
     delete process.env.INFERABLE_API_SECRET;
@@ -55,20 +55,15 @@ describe("Inferable", () => {
   });
 
   it("should initialize without optional args", () => {
-    expect(() => new Inferable({ apiSecret: TEST_API_SECRET })).not.toThrow();
-  });
-
-  it("should initialize with API secret in environment", () => {
-    process.env.INFERABLE_API_SECRET = TEST_API_SECRET;
-    expect(() => new Inferable()).not.toThrow();
+    expect(() => new AgentRPC({ apiSecret: TEST_API_SECRET })).not.toThrow();
   });
 
   it("should throw if no API secret is provided", () => {
-    expect(() => new Inferable()).toThrow();
+    expect(() => new AgentRPC()).toThrow();
   });
 
   it("should throw if invalid API secret is provided", () => {
-    expect(() => new Inferable({ apiSecret: "invalid" })).toThrow();
+    expect(() => new AgentRPC({ apiSecret: "invalid" })).toThrow();
   });
 });
 
@@ -76,7 +71,7 @@ describe("Functions", () => {
   it("should handle successful function calls", async () => {
     const service = testService();
 
-    await service.client.tools.listen();
+    await service.client.listen();
 
     const results = await Promise.all(
       Array.from({ length: 10 }).map(async (_, i) => {
@@ -110,7 +105,7 @@ describe("Functions", () => {
       );
     });
 
-    await service.client.tools.unlisten();
+    await service.client.unlisten();
   });
 
   it("should recover from transient polling errors", async () => {
@@ -131,7 +126,7 @@ describe("Functions", () => {
     server.listen();
 
     const service = testService();
-    await service.client.tools.listen();
+    await service.client.listen();
 
     const result = await client.createJob({
       query: {
@@ -166,45 +161,8 @@ describe("Functions", () => {
 
     const service = testService();
 
-    await expect(service.client.tools.listen()).rejects.toThrow();
+    await expect(service.client.listen()).rejects.toThrow();
 
     server.close();
-  });
-});
-
-describe("LLM", () => {
-  it("should handle successful LLM calls", async () => {
-    const client = inferableInstance();
-
-    const result = await client.llm.structured({
-      input: "Good morning Vietnam!",
-      schema: z.object({
-        country: z.string(),
-      }),
-    });
-
-    expect(result).toEqual({ country: "Vietnam" });
-  });
-
-  it("should be able to use a custom provider", async () => {
-    const client = inferableInstance();
-
-    const result = await client.llm.structured(
-      {
-        input: "Good morning Vietnam!",
-        schema: z.object({
-          country: z.string(),
-        }),
-      },
-      {
-        provider: {
-          model: "gemini-2.0-flash",
-          key: process.env.INFERABLE_TEST_GEMINI_API_KEY!,
-          url: "https://generativelanguage.googleapis.com/v1beta",
-        },
-      },
-    );
-
-    expect(result).toEqual({ country: "Vietnam" });
   });
 });

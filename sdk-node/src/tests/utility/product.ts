@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { inferableInstance } from "../utils";
+import { testInstance } from "../utils";
 
 const cache = new Map<string, any>();
 
@@ -29,11 +29,11 @@ export const succeedsOnSecondAttempt = async ({ id }: { id: string }) => {
 
 export const productService = () => {
   const prefix = `product${Math.random().toString(36).substring(2, 5)}`;
-  const client = inferableInstance();
+  const client = testInstance();
 
-  client.tools.register({
+  client.register({
     name: `${prefix}_getProduct10sCache`,
-    func: getProduct,
+    handler: getProduct,
     schema: {
       input: z.object({
         id: z.string(),
@@ -50,9 +50,9 @@ export const productService = () => {
     },
   });
 
-  client.tools.register({
+  client.register({
     name: `${prefix}_getProduct1sCache`,
-    func: getProduct,
+    handler: getProduct,
     schema: {
       input: z.object({
         id: z.string(),
@@ -71,9 +71,9 @@ export const productService = () => {
 
   let failingFunctionCount = 0;
 
-  client.tools.register({
+  client.register({
     name: `${prefix}_failingFunction`,
-    func: async () => {
+    handler: async () => {
       await new Promise((resolve) => setTimeout(resolve, 5000));
       failingFunctionCount++;
       return failingFunctionCount;
@@ -89,9 +89,9 @@ export const productService = () => {
     },
   });
 
-  client.tools.register({
+  client.register({
     name: `${prefix}_succeedsOnSecondAttempt`,
-    func: succeedsOnSecondAttempt,
+    handler: succeedsOnSecondAttempt,
     schema: {
       input: z.object({
         id: z.string(),

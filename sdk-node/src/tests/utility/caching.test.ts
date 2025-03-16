@@ -6,11 +6,11 @@ describe("Caching", () => {
   const service = productService();
 
   beforeAll(async () => {
-    await service.client.tools.listen();
+    await service.client.listen();
   }, 10000);
 
   afterAll(async () => {
-    await service.client.tools.unlisten();
+    await service.client.unlisten();
   });
 
   it("should get the cached results when possible", async () => {

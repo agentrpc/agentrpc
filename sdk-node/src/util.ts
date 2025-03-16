@@ -1,4 +1,4 @@
-import { InferableError } from "./errors";
+import { AgentRPCError } from "./errors";
 import Ajv from "ajv";
 import addFormats from "ajv-formats";
 import { z } from "zod";
@@ -33,12 +33,12 @@ export const validateFunctionArgs = (schema: any, args: unknown) => {
 
 export const validateServiceName = (name: string) => {
   if (!ALLOWED_NAME_CHARACTERS.test(name)) {
-    throw new InferableError(
+    throw new AgentRPCError(
       `Service name must only contain letters and numbers. Got: ${name}`,
     );
   }
   if (name.length > MAX_NAME_LENGTH) {
-    throw new InferableError(
+    throw new AgentRPCError(
       `Service name must be less than ${MAX_NAME_LENGTH} characters: Got ${name} with length ${name.length}.`,
     );
   }
@@ -46,7 +46,7 @@ export const validateServiceName = (name: string) => {
 
 export const validateFunctionName = (name: string) => {
   if (!ALLOWED_NAME_CHARACTERS.test(name)) {
-    throw new InferableError(
+    throw new AgentRPCError(
       `Function name must only contain letters and numbers. Got: ${name}`,
     );
   }
@@ -55,7 +55,7 @@ export const validateFunctionName = (name: string) => {
 export const validatePropertyName = (name: string) => {
   const ALLOWED_PROPERTY_NAME_CHARACTERS = /^[a-zA-Z0-9_]+$/;
   if (!ALLOWED_PROPERTY_NAME_CHARACTERS.test(name)) {
-    throw new InferableError(
+    throw new AgentRPCError(
       `Property name must only contain letters, numbers and underscore '_'. Got: ${name}`,
     );
   }
@@ -63,7 +63,7 @@ export const validatePropertyName = (name: string) => {
 
 export const validateDescription = (description?: string) => {
   if (description === "") {
-    throw new InferableError("Description must not be empty");
+    throw new AgentRPCError("Description must not be empty");
   }
 };
 
@@ -101,7 +101,7 @@ export const validateFunctionSchema = (
     if (error instanceof Error) {
       return ajvErrorToFailures(error);
     }
-    throw new InferableError("Unknown JSON schema compilation error", {
+    throw new AgentRPCError("Unknown JSON schema compilation error", {
       error,
     });
   }
@@ -160,12 +160,9 @@ export const ajvErrorToFailures = (
         const firstSpace = s.indexOf(" ");
 
         if (firstSpace === -1) {
-          throw new InferableError(
-            "Could not extract failures from AJV error",
-            {
-              error,
-            },
-          );
+          throw new AgentRPCError("Could not extract failures from AJV error", {
+            error,
+          });
         }
 
         return {
@@ -188,7 +185,6 @@ export const isZodType = (input: any): input is z.ZodTypeAny => {
   return input?._def?.typeName;
 };
 
-
 export const INTERRUPT_KEY = "__inferable_interrupt";
 type VALID_INTERRUPT_TYPES = "approval" | "general";
 
@@ -196,12 +192,10 @@ export const extractInterrupt = (
   input: unknown,
 ): z.infer<typeof interruptSchema> | undefined => {
   if (input && typeof input === "object" && INTERRUPT_KEY in input) {
-    const parsedInterrupt = interruptSchema.safeParse(
-      input[INTERRUPT_KEY],
-    );
+    const parsedInterrupt = interruptSchema.safeParse(input[INTERRUPT_KEY]);
 
     if (!parsedInterrupt.success) {
-      throw new InferableError("Found invalid Interrupt data");
+      throw new AgentRPCError("Found invalid Interrupt data");
     }
 
     return parsedInterrupt.data;
@@ -211,18 +205,25 @@ export const extractInterrupt = (
 export class Interrupt {
   [INTERRUPT_KEY]: z.infer<typeof interruptSchema>;
 
-  constructor(type: VALID_INTERRUPT_TYPES, notification?: z.infer<typeof interruptSchema>["notification"]) {
+  constructor(
+    type: VALID_INTERRUPT_TYPES,
+    notification?: z.infer<typeof interruptSchema>["notification"],
+  ) {
     this[INTERRUPT_KEY] = {
       type,
       notification,
     };
   }
 
-  static approval(notification?: z.infer<typeof interruptSchema>["notification"]) {
+  static approval(
+    notification?: z.infer<typeof interruptSchema>["notification"],
+  ) {
     return new Interrupt("approval", notification);
   }
 
-  static general(notification?: z.infer<typeof interruptSchema>["notification"]) {
+  static general(
+    notification?: z.infer<typeof interruptSchema>["notification"],
+  ) {
     return new Interrupt("general", notification);
   }
 }

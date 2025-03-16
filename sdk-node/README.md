@@ -1,139 +1,110 @@
-<p align="center">
-  <img src="../assets/logo.png" alt="Inferable Logo" width="200" />
-</p>
+# AgentRPC TypeScript SDK
 
-# Typescript SDK
-
-[![npm version](https://badge.fury.io/js/inferable.svg)](https://badge.fury.io/js/inferable)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Documentation](https://img.shields.io/badge/docs-inferable.ai-brightgreen)](https://docs.inferable.ai/)
-[![Downloads](https://img.shields.io/npm/dm/inferable)](https://www.npmjs.com/package/inferable)
-
-This is the official Inferable AI SDK for Typescript.
+A universal RPC layer for AI agents. Connect to any function, any language, any framework, in minutes.
 
 ## Installation
 
-### npm
-
-```bash
-npm install inferable
+```sh
+npm install agentrpc
 ```
 
-### yarn
+## Registering Tools
 
-```bash
-yarn add inferable
+### Creating an AgentRPC Client
+
+```ts
+import { AgentRPC } from "agentrpc";
+
+const client = new AgentRPC({
+  apiSecret: "YOUR_API_SECRET",
+});
 ```
 
-### pnpm
+### Registering a Tool
 
-```bash
-pnpm add inferable
-```
-
-## ⚡️ Quick Start
-
-This guide will help you quickly set up and run your first Inferable workflow with structured outputs.
-
-### 1. Create a demo cluster
-
-A cluster is a logical grouping of tools, agents and workflows that work together.
-
-```bash
-mkdir inferable-demo
-cd inferable-demo
-curl -XPOST https://api.inferable.ai/ephemeral-setup > cluster.json
-```
-
-### 2. Install dependencies
-
-```bash
-npm init -y
-npm install inferable tsx
-```
-
-### 3. Create a workflow with structured outputs
-
-Workflows are a way to define a sequence of actions to be executed. They run on your own compute and can be triggered from anywhere via the API.
-
-```typescript
-// simple-workflow.ts
-import { Inferable } from "inferable";
+```ts
 import { z } from "zod";
 
-const inferable = new Inferable({
-  apiSecret: require("./cluster.json").apiKey,
-});
-
-const workflow = inferable.workflows.create({
-  name: "simple",
-  inputSchema: z.object({
-    executionId: z.string(),
-    url: z.string(),
-  }),
-});
-
-workflow.version(1).define(async (ctx, input) => {
-  const text = await fetch(input.url).then((res) => res.text());
-
-  const { menuItems, hours } = ctx.llm.structured({
-    input: text,
-    schema: z.object({
-      menuItems: z.array(
-        z.object({
-          name: z.string(),
-          price: z.number(),
-        }),
-      ),
-      hours: z.object({
-        saturday: z.string(),
-        sunday: z.string(),
-      }),
-    }),
-  });
-
-  return { menuItems, hours };
-});
-
-// This will register the workflow with the Inferable control-plane at api.inferable.ai
-workflow.listen().then(() => {
-  console.log("Workflow listening");
+client.register({
+  name: "hello",
+  schema: z.object({ name: z.string() }),
+  handler: async ({ name }) => `Hello ${name}`,
+  // Optional
+  config: {
+    retryCountOnStall: 3,
+    timeoutSeconds: 30,
+  },
 });
 ```
 
-### 4. Run the workflow
+### Starting the Listener
 
-Workflows can be triggered from anywhere.
-
-```bash
-# Get your cluster details
-CLUSTER_ID=$(cat cluster.json | jq -r .id)
-API_SECRET=$(cat cluster.json | jq -r .apiKey)
-
-# Run the workflow
-curl -XPOST https://api.inferable.ai/clusters/$CLUSTER_ID/workflows/simple/executions \
-  -d '{"executionId": "123", "url": "https://a.inferable.ai/menu.txt"}' \
-  -H "Authorization: Bearer $API_SECRET"
+```ts
+await client.listen();
 ```
 
-You can also trigger the workflow from your application code:
+### Stopping the Listener
 
-```typescript
-// From your application code
-await inferable.workflows.trigger("simple", {
-  executionId: "123",
-  url: "https://a.inferable.ai/menu.txt",
-});
+```ts
+await client.unlisten();
 ```
 
-## Documentation
+## MCP Server
 
-- [Inferable documentation](https://docs.inferable.ai/) contains all the information you need to get started with Inferable.
+The AgentRPC TypeScript SDK includes an MCP (Model Context Protocol) server that can be started using:
 
-## Support
+```sh
+npx AgentRPC server <YOUR_API_SECRET>
+```
 
-For support or questions, please [create an issue in the repository](https://github.com/inferablehq/inferable/issues).
+This will launch an MCP-compliant server, allowing external AI models and applications to interact with your registered tools.
 
-## Contributing
+For more details on MCP, visit [Model Context Protocol](https://modelcontextprotocol.io/introduction).
 
-Contributions to the Inferable NodeJs Client are welcome. Please ensure that your code adheres to the existing style and includes appropriate tests.
+### Supported Applications
+
+AgentRPC’s MCP server can be used with various applications that support the Model Context Protocol, such as:
+
+- [**Cursor**](https://docs.cursor.com/context/model-context-protocol#configuring-mcp-servers)
+- [**Claude Desktop**](https://modelcontextprotocol.io/quickstart/user)
+- [**Zed**](https://zed.dev/docs/assistant/model-context-protocol)
+
+For a quickstart guide on MCP, refer to the [Model Context Protocol Quickstart](https://modelcontextprotocol.io/quickstart/user).
+
+## API
+
+### `new AgentRPC(options?)`
+
+Creates a new AgentRPC client.
+
+#### Options:
+
+| Option      | Type   | Default                    | Description          |
+| ----------- | ------ | -------------------------- | -------------------- |
+| `apiSecret` | string | **Required**               | The API secret key.  |
+| `endpoint`  | string | `https://api.agentrpc.com` | Custom API endpoint. |
+| `machineId` | string | Automatically generated    | Custom machine ID.   |
+
+### `register({ name, schema, handler, config })`
+
+Registers a tool.
+
+- `name`: Unique tool identifier.
+- `schema`: Input validation schema (Zod or JSON schema).
+- `handler`: Async function to process input.
+- `config`: Optional tool configuration.
+
+#### Tool Configuration Options:
+
+| Option              | Type   | Default | Description                 |
+| ------------------- | ------ | ------- | --------------------------- |
+| `retryCountOnStall` | number | `null`  | Number of retries on stall. |
+| `timeoutSeconds`    | number | `null`  | Request timeout in seconds. |
+
+### `listen()`
+
+Starts listening for requests.
+
+### `unlisten()`
+
+Stops all running listeners.

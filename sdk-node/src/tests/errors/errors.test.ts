@@ -6,11 +6,11 @@ describe("Errors", () => {
   const service = animalService();
   jest.retryTimes(2);
   beforeAll(async () => {
-    await service.client.tools.listen();
+    await service.client.listen();
   }, 10000);
 
   afterAll(async () => {
-    await service.client.tools.unlisten();
+    await service.client.unlisten();
   });
 
   it("should get the normal error", async () => {

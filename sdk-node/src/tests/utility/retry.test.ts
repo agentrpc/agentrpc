@@ -6,11 +6,11 @@ describe("retrying", () => {
   const service = productService();
 
   beforeAll(async () => {
-    await service.client.tools.listen();
+    await service.client.listen();
   });
 
   afterAll(async () => {
-    await service.client.tools.unlisten();
+    await service.client.unlisten();
   });
 
   // this test is wrong. in certain cases, the function will be completed

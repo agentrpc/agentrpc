@@ -1,4 +1,4 @@
-import { Inferable } from "../Inferable";
+import { AgentRPC } from "../agentrpc";
 import { initClient } from "@ts-rest/core";
 import { contract } from "../contract";
 
@@ -26,8 +26,8 @@ export const client = initClient(contract, {
   },
 });
 
-export const inferableInstance = () =>
-  new Inferable({
+export const testInstance = () =>
+  new AgentRPC({
     apiSecret: TEST_API_SECRET,
     endpoint: TEST_ENDPOINT,
   });

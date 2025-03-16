@@ -9,8 +9,8 @@ export type Result<T = unknown> = {
 };
 
 export const executeFn = async (
-  fn: ToolRegistrationInput<any>["func"],
-  args: Parameters<ToolRegistrationInput<any>["func"]>,
+  fn: ToolRegistrationInput<any>["handler"],
+  args: Parameters<ToolRegistrationInput<any>["handler"]>,
 ): Promise<Result> => {
   const start = Date.now();
   try {

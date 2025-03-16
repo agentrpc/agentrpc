@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { inferableInstance } from "../utils";
+import { testInstance } from "../utils";
 
 export const getNormalAnimal = async () => {
   throw new Error("This is a normal error");
@@ -18,19 +18,19 @@ export const getCustomAnimal = async () => {
 
 export const animalService = () => {
   const prefix = `animal${Math.random().toString(36).substring(2, 5)}`;
-  const client = inferableInstance()
+  const client = testInstance();
 
-  client.tools.register ({
+  client.register({
     name: `${prefix}_getNormalAnimal`,
-    func: getNormalAnimal,
+    handler: getNormalAnimal,
     schema: {
       input: z.object({}),
     },
   });
 
-  client.tools.register({
+  client.register({
     name: `${prefix}_getCustomAnimal`,
-    func: getCustomAnimal,
+    handler: getCustomAnimal,
     schema: {
       input: z.object({}),
     },
@@ -38,6 +38,6 @@ export const animalService = () => {
 
   return {
     client,
-    prefix
-  }
-}
+    prefix,
+  };
+};
