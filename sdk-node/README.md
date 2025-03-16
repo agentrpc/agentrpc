@@ -111,6 +111,56 @@ Add the following to your `~/.cursor/mcp.json`:
 
 [**Zed**](https://zed.dev/docs/assistant/model-context-protocol)
 
+## OpenAI Tools
+
+AgentRPC provides integration with OpenAI's function calling capabilities, allowing you to expose your registered RPC functions as tools for OpenAI models to use.
+
+### `client.OpenAI.getTools()`
+
+The `getTools()` method returns your registered AgentRPC functions formatted as OpenAI tools, ready to be passed to OpenAI's API.
+
+```javascript
+// First register your functions with AgentRPC (Locally or on another machine)
+
+// Then get the tools formatted for OpenAI
+const tools = await client.OpenAI.getTools();
+
+// Pass these tools to OpenAI
+const chatCompletion = await openai.chat.completions.create({
+  model: "gpt-4-1106-preview",
+  messages: messages,
+  tools: tools,
+  tool_choice: "auto",
+});
+```
+
+### `client.OpenAI.executeTool(toolCall)`
+
+The `executeTool()` method executes an OpenAI tool call against your registered AgentRPC functions.
+
+```javascript
+// Process tool calls from OpenAI's response
+if (responseMessage.tool_calls && responseMessage.tool_calls.length > 0) {
+  for (const toolCall of responseMessage.tool_calls) {
+    try {
+      // Execute the tool and add result to messages
+      messages.push({
+        role: "tool",
+        tool_call_id: toolCall.id,
+        content: await client.OpenAI.executeTool(toolCall),
+      });
+    } catch (error) {
+      console.error(`Error executing tool ${toolCall.function.name}:`, error);
+      messages.push({
+        role: "tool",
+        tool_call_id: toolCall.id,
+        content: `Error: ${error.message}`,
+      });
+    }
+  }
+}
+```
+
 ## API
 
 ### `new AgentRPC(options?)`

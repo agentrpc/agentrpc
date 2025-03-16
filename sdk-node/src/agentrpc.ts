@@ -7,6 +7,8 @@ import { machineId } from "./machine-id";
 import { PollingAgent, registerMachine } from "./polling";
 import { ToolRegistrationInput, JsonSchemaInput } from "./types";
 
+import OpenAI from "openai";
+
 // Custom json formatter
 debug.formatters.J = (json) => {
   return JSON.stringify(json, null, 2);
@@ -97,6 +99,82 @@ export class AgentRPC {
       apiSecret: this.apiSecret,
     });
   }
+
+  public OpenAI = {
+    getTools: async (): Promise<OpenAI.ChatCompletionTool[]> => {
+      const clusterId = this.clusterId ?? (await this.getClusterId());
+
+      const toolResponse = await this.client.listTools({
+        params: { clusterId },
+      });
+
+      if (toolResponse.status !== 200) {
+        throw new Error(
+          `Failed to list AgentRPC tools: ${toolResponse.status}`,
+        );
+      }
+
+      const tools = toolResponse.body.map((tool) => ({
+        type: "function" as const,
+        function: {
+          name: tool.name,
+          description: tool.description ?? "",
+          parameters: JSON.parse(tool.schema ?? "{}"),
+        },
+      }));
+
+      return tools;
+    },
+    executeTool: async (toolCall: OpenAI.ChatCompletionMessageToolCall) => {
+      const clusterId = this.clusterId ?? (await this.getClusterId());
+
+      const tools = await this.OpenAI.getTools();
+      const tool = tools.find(
+        (t) => t.function.name === toolCall.function.name,
+      );
+
+      if (!tool) {
+        throw new Error(`Tool not found: ${toolCall.function.name}`);
+      }
+
+      const createResult = await this.client.createJob({
+        body: {
+          tool: tool.function.name,
+          input: JSON.parse(toolCall.function.arguments),
+        },
+        params: { clusterId },
+        query: {
+          waitTime: 20,
+        },
+      });
+
+      if (createResult.status !== 200) {
+        throw new Error(`Failed to run tool: ${createResult.status}`);
+      }
+
+      let status: string | null;
+      let result: string | null;
+      let resultType: string | null;
+
+      ({ status, result = "", resultType = "rejection" } = createResult.body);
+
+      while (!status || !["failure", "success"].includes(status)) {
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+
+        const details = await this.client.getJob({
+          params: { clusterId, jobId: createResult.body.id },
+        });
+
+        if (details.status !== 200) {
+          throw new Error(`Failed to fetch job details: ${details.status}`);
+        }
+
+        ({ status, result = "", resultType = "rejection" } = details.body);
+      }
+
+      return JSON.stringify({ type: resultType, content: result });
+    },
+  };
 
   public register<T extends z.ZodTypeAny | JsonSchemaInput>({
     name,
