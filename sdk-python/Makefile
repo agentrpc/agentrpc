@@ -1,16 +1,20 @@
 .PHONY: install test lint format publish clean
 
 install:
+	uv venv
 	uv pip install .[dev]
 
 test:
-	pytest tests/ -v
+	uv run pytest tests/ -v
 
 lint:
-	ruff check .
+	uv run ruff check .
 
 format:
-	ruff format .
+	uv run ruff format .
+
+build:
+	uv run python -m build
 
 clean:
 	rm -rf build/
@@ -23,6 +27,5 @@ clean:
 	find . -type d -name "__pycache__" -exec rm -rf {} +
 	find . -type d -name "*.pyc" -exec rm -rf {} +
 
-publish: clean
-	uv run python -m build
+publish: clean build
 	uv run python -m twine upload dist/*

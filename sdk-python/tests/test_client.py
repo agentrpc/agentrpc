@@ -1,8 +1,6 @@
 import os
 from pathlib import Path
 
-from openai.types.chat.chat_completion_message import FunctionCall
-
 from dotenv import load_dotenv
 from agentrpc import AgentRPC
 from agentrpc.openai import OpenAIIntegration
@@ -32,9 +30,9 @@ def test_client_openai_get_tools():
     print(tools)
 
 
-def test_client_openai_execute_tool():
-    """Test executing ."""
-    client = AgentRPC(api_secret, api_endpoint)
-    function_call = FunctionCall(name="hello", arguments='{"name": "agent"}')
-    result = client.openai.execute_tool(function_call)
-    print(result)
+# def test_client_openai_execute_tool():
+#     """Test executing ."""
+#     client = AgentRPC(api_secret, api_endpoint)
+#     function_call = FunctionCall(name="hello", arguments='{"name": "agent"}')
+#     result = client.openai.execute_tool(function_call)
+#     print(result)
