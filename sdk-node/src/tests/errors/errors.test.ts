@@ -32,7 +32,7 @@ describe("Errors", () => {
 
     expect(result.body).toEqual(
       expect.objectContaining({
-        status: "success",
+        status: "done",
         resultType: "rejection",
         result: expect.objectContaining({
           name: "Error",
@@ -61,7 +61,7 @@ describe("Errors", () => {
 
     expect(result.body).toEqual(
       expect.objectContaining({
-        status: "success",
+        status: "done",
         resultType: "rejection",
         result: expect.objectContaining({
           name: "AnimalError",

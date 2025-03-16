@@ -50,7 +50,7 @@ describe("Caching", () => {
 
     expect(result1.body).toEqual(
       expect.objectContaining({
-        status: "success",
+        status: "done",
         resultType: "resolution",
         result: result2.body.result,
       }),
@@ -96,14 +96,14 @@ describe("Caching", () => {
 
     expect(result1.body).toEqual(
       expect.objectContaining({
-        status: "success",
+        status: "done",
         resultType: "resolution",
       }),
     );
 
     expect(result2.body).toEqual(
       expect.objectContaining({
-        status: "success",
+        status: "done",
         resultType: "resolution",
       }),
     );

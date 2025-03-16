@@ -63,7 +63,7 @@ describe("retrying", () => {
 
     expect(result.body).toEqual(
       expect.objectContaining({
-        status: "success",
+        status: "done",
         resultType: "resolution",
       }),
     );

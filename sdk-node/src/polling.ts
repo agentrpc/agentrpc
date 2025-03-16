@@ -300,7 +300,7 @@ export const pollForJobCompletion = async (
   let result: string = initialResult;
   let resultType: string = initialResultType;
 
-  while (!status || !["failure", "success"].includes(status)) {
+  while (!status || !["failure", "done"].includes(status)) {
     await new Promise((resolve) => setTimeout(resolve, 1000));
 
     const details = await client.getJob({

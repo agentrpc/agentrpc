@@ -96,7 +96,7 @@ describe("Functions", () => {
 
       expect(result.body).toEqual(
         expect.objectContaining({
-          status: "success",
+          status: "done",
           resultType: "resolution",
           result: {
             echo: expect.any(String),

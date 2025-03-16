@@ -94,7 +94,7 @@ describe("Polling functions", () => {
     );
 
     // Verify the results
-    expect(status).toEqual("success");
+    expect(status).toEqual("done");
     expect(resultType).toEqual("resolution");
     expect(result).toEqual({ echo: "hello world" });
   });
@@ -110,7 +110,7 @@ describe("Polling functions", () => {
     );
 
     // Verify the error results
-    expect(status).toEqual("success");
+    expect(status).toEqual("done");
     expect(resultType).toEqual("rejection");
     expect(result).toHaveProperty("name", "Error");
     expect(result).toHaveProperty("message", "This is an error");
@@ -135,7 +135,7 @@ describe("Polling functions", () => {
     expect(elapsed).toBeGreaterThanOrEqual(2000);
 
     // Verify the results
-    expect(status).toEqual("success");
+    expect(status).toEqual("done");
     expect(resultType).toEqual("resolution");
     expect(result).toEqual({ echo: "delayed response", delayed: true });
   });
@@ -166,7 +166,7 @@ describe("Polling functions", () => {
       { text: "custom poll interval" },
     );
 
-    expect(status).toEqual("success");
+    expect(status).toEqual("done");
     expect(resultType).toEqual("resolution");
     expect(result).toEqual({ echo: "custom poll interval" });
   });
