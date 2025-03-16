@@ -4,6 +4,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z, ZodRawShape, ZodTypeAny } from "zod";
 import { createApiClient } from "./create-client";
+import { createAndPollJob } from "./polling";
 
 const commandName = process.argv[2];
 
@@ -75,68 +76,32 @@ async function main() {
       tool.description ?? "",
       buildZodObject(JSON.parse(tool.schema!)),
       async (i) => {
-        const createResult = await client.createJob({
-          body: {
-            tool: tool.name,
-            input: i,
-          },
-          params: {
+        try {
+          const { status, result, resultType } = await createAndPollJob(
+            client,
             clusterId,
-          },
-          query: {
-            waitTime: 20,
-          },
-        });
+            tool.name,
+            i,
+          );
 
-        if (createResult.status !== 200) {
           return {
             content: [
               {
                 type: "text",
-                text: `Failed to run tool: ${createResult.status}`,
+                text: `${resultType}: ${JSON.stringify(result)}`,
+              },
+            ],
+          };
+        } catch (error) {
+          return {
+            content: [
+              {
+                type: "text",
+                text: `Failed to run tool: ${error instanceof Error ? error.message : String(error)}`,
               },
             ],
           };
         }
-
-        let status: string = createResult.body.status;
-        let result: string = createResult.body.result ?? "";
-        let resultType: string = createResult.body.resultType ?? "rejection";
-
-        while (!["failure", "success"].includes(status)) {
-          await new Promise((resolve) => setTimeout(resolve, 1000));
-
-          const details = await client.getJob({
-            params: {
-              clusterId,
-              jobId: createResult.body.id,
-            },
-          });
-
-          if (details.status !== 200) {
-            return {
-              content: [
-                {
-                  type: "text",
-                  text: `Failed to run tool: ${details.status}`,
-                },
-              ],
-            };
-          }
-
-          status = details.body.status;
-          result = details.body.result ?? "";
-          resultType = details.body.resultType ?? "rejection";
-        }
-
-        return {
-          content: [
-            {
-              type: "text",
-              text: `${resultType}: ${JSON.stringify(result)}`,
-            },
-          ],
-        };
       },
     );
   }

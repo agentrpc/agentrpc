@@ -4,7 +4,7 @@ import { z } from "zod";
 import { createApiClient } from "./create-client";
 import { AgentRPCError } from "./errors";
 import { machineId } from "./machine-id";
-import { PollingAgent, registerMachine } from "./polling";
+import { PollingAgent, registerMachine, createAndPollJob } from "./polling";
 import { ToolRegistrationInput, JsonSchemaInput } from "./types";
 
 import OpenAI from "openai";
@@ -137,40 +137,12 @@ export class AgentRPC {
         throw new Error(`Tool not found: ${toolCall.function.name}`);
       }
 
-      const createResult = await this.client.createJob({
-        body: {
-          tool: tool.function.name,
-          input: JSON.parse(toolCall.function.arguments),
-        },
-        params: { clusterId },
-        query: {
-          waitTime: 20,
-        },
-      });
-
-      if (createResult.status !== 200) {
-        throw new Error(`Failed to run tool: ${createResult.status}`);
-      }
-
-      let status: string | null;
-      let result: string | null;
-      let resultType: string | null;
-
-      ({ status, result = "", resultType = "rejection" } = createResult.body);
-
-      while (!status || !["failure", "success"].includes(status)) {
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-
-        const details = await this.client.getJob({
-          params: { clusterId, jobId: createResult.body.id },
-        });
-
-        if (details.status !== 200) {
-          throw new Error(`Failed to fetch job details: ${details.status}`);
-        }
-
-        ({ status, result = "", resultType = "rejection" } = details.body);
-      }
+      const { status, result, resultType } = await createAndPollJob(
+        this.client,
+        clusterId,
+        tool.function.name,
+        JSON.parse(toolCall.function.arguments),
+      );
 
       return JSON.stringify({ type: resultType, content: result });
     },

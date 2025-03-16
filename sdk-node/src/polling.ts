@@ -10,7 +10,7 @@ import zodToJsonSchema from "zod-to-json-schema";
 
 const DEFAULT_RETRY_AFTER_SECONDS = 10;
 
-export const log = debug("inferable:client:polling-agent");
+export const log = debug("agentrpc:client:polling-agent");
 
 type JobMessage = {
   id: string;
@@ -269,4 +269,100 @@ export const registerMachine = async (
   return {
     clusterId: registerResult.body.clusterId,
   };
+};
+
+/**
+ * Poll for job completion until it reaches a terminal state.
+ * This is shared logic used by both MCP and OpenAI function bindings.
+ *
+ * @param client - The API client instance
+ * @param clusterId - The cluster ID
+ * @param jobId - The job ID to poll
+ * @param initialStatus - Initial job status (if already known)
+ * @param initialResult - Initial job result (if already known)
+ * @param initialResultType - Initial result type (if already known)
+ * @param pollInterval - Interval in ms between polling attempts (default: 1000ms)
+ * @returns - The final job result with status, result content and resultType
+ */
+export const pollForJobCompletion = async (
+  client: ReturnType<typeof createApiClient>,
+  clusterId: string,
+  jobId: string,
+  initialStatus?: string | null,
+  initialResult: string = "",
+  initialResultType: string = "rejection",
+): Promise<{
+  status: string;
+  result: string;
+  resultType: string;
+}> => {
+  let status: string | null = initialStatus ?? null;
+  let result: string = initialResult;
+  let resultType: string = initialResultType;
+
+  while (!status || !["failure", "success"].includes(status)) {
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+
+    const details = await client.getJob({
+      params: { clusterId, jobId },
+    });
+
+    if (details.status !== 200) {
+      throw new AgentRPCError(`Failed to fetch job details: ${details.status}`);
+    }
+
+    const body = details.body;
+    status = body.status;
+    result = body.result || "";
+    resultType = body.resultType || "rejection";
+  }
+
+  return { status: status as string, result, resultType };
+};
+
+/**
+ * Create and execute a job with the given tool and input, polling for completion.
+ *
+ * @param client - The API client instance
+ * @param clusterId - The cluster ID
+ * @param toolName - The name of the tool to execute
+ * @param input - The input arguments for the tool
+ * @param waitTime - Server-side wait time in seconds (default: DEFAULT_WAIT_TIME_SECONDS)
+ * @returns - The final job result with status, result content and resultType
+ * @throws - Error if job creation or polling fails
+ */
+export const createAndPollJob = async (
+  client: ReturnType<typeof createApiClient>,
+  clusterId: string,
+  toolName: string,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  input: any,
+): Promise<{
+  status: string;
+  result: string;
+  resultType: string;
+}> => {
+  const createResult = await client.createJob({
+    body: {
+      tool: toolName,
+      input,
+    },
+    params: { clusterId },
+    query: {
+      waitTime: 20,
+    },
+  });
+
+  if (createResult.status !== 200) {
+    throw new AgentRPCError(`Failed to run tool: ${createResult.status}`);
+  }
+
+  return pollForJobCompletion(
+    client,
+    clusterId,
+    createResult.body.id,
+    createResult.body.status,
+    createResult.body.result || "",
+    createResult.body.resultType || "rejection",
+  );
 };
