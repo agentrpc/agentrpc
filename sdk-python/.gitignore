@@ -25,6 +25,8 @@ venv/
 env/
 ENV/
 myenv/
+.venv/
+.uv/
 
 # IDE
 .idea/
@@ -36,6 +38,9 @@ myenv/
 .pytest_cache/
 .coverage
 htmlcov/
+
+# Ruff
+.ruff_cache/
 
 # OS specific
 .DS_Store
