@@ -1,10 +1,20 @@
+#!/usr/bin/env node
+
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z, ZodRawShape, ZodTypeAny } from "zod";
 import { createApiClient } from "./create-client";
 
-// Firt arg
-const apiSecret = process.argv[2];
+// Firt arg Command name
+const commandName = process.argv[2];
+
+// Second arg API Secret
+const apiSecret = process.argv[3];
+
+if (!commandName || commandName !== "mcp") {
+  console.error("Invalid command. Supported commands: mcp");
+  process.exit(1);
+}
 
 if (!apiSecret) {
   console.error("No API Secret provided");
@@ -18,7 +28,9 @@ const client = createApiClient({
 // Create server instance
 const server = new McpServer({
   name: "agentrpc",
-  version: "1.0.0",
+  // Read from package.json
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  version: require("../package.json").version,
 });
 
 async function main() {
@@ -33,7 +45,7 @@ async function main() {
 
   if (clusterResult.status !== 200) {
     console.error(
-      "Failed to get Cluster Id:",
+      "Failed to get AgentRPC Cluster ID",
       clusterResult.status,
       clusterResult.body,
     );
@@ -51,7 +63,7 @@ async function main() {
 
   if (toolResponse.status !== 200) {
     console.error(
-      "Failed to list tools:",
+      "Failed to list AgentRPC tools:",
       toolResponse.status,
       toolResponse.body,
     );
@@ -60,6 +72,9 @@ async function main() {
   }
 
   for (const tool of toolResponse.body) {
+    console.info("Registering tool:", {
+      name: tool.name,
+    });
     server.tool(
       tool.name,
       tool.description ?? "",
@@ -133,11 +148,11 @@ async function main() {
 
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  console.error("MCP Server running on stdio");
+  console.info("AgentRPC MCP Server running on stdio");
 }
 
 main().catch((error) => {
-  console.error("Fatal error in main():", error);
+  console.error("Failed to start AgentRPC MCP Server", error);
   process.exit(1);
 });
 

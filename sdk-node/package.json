@@ -1,10 +1,10 @@
 {
   "name": "agentrpc",
-  "version": "0.0.1",
-  "description": "Javascript SDK for AgentRPC",
+  "version": "0.0.3",
+  "description": "Node SDK for AgentRPC",
   "main": "bin/index.js",
   "bin": {
-    "server": "/bin/server.js"
+    "agentrpc": "/bin/bin.js"
   },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",

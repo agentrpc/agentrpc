@@ -11,6 +11,6 @@
     "skipLibCheck": true,
     "allowJs": true
   },
-  "include": ["src/index.ts", "src/server.ts"],
+  "include": ["src/index.ts", "src/bin.ts"],
   "exclude": ["node_modules"]
 }

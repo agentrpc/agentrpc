@@ -17,7 +17,7 @@ export const createApiClient = ({
   apiSecret?: string;
 }) =>
   initClient(contract, {
-    baseUrl: baseUrl ?? "https://api.inferable.ai",
+    baseUrl: baseUrl ?? "https://api.agentrpc.com",
     baseHeaders: {
       "x-machine-sdk-version": SDK_VERSION,
       "x-machine-sdk-language": "typescript",

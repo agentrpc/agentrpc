@@ -27,7 +27,9 @@ import { z } from "zod";
 
 client.register({
   name: "hello",
-  schema: z.object({ name: z.string() }),
+  schema: {
+    input: z.object({ name: z.string() }),
+  },
   handler: async ({ name }) => `Hello ${name}`,
   // Optional
   config: {
@@ -54,7 +56,7 @@ await client.unlisten();
 The AgentRPC TypeScript SDK includes an MCP (Model Context Protocol) server that can be started using:
 
 ```sh
-npx AgentRPC server <YOUR_API_SECRET>
+npx agentrpc mcp <YOUR_API_SECRET>
 ```
 
 This will launch an MCP-compliant server, allowing external AI models and applications to interact with your registered tools.
