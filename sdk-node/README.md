@@ -63,15 +63,53 @@ This will launch an MCP-compliant server, allowing external AI models and applic
 
 For more details on MCP, visit [Model Context Protocol](https://modelcontextprotocol.io/introduction).
 
-### Supported Applications
+### Claude Desktop Usage:
 
-AgentRPC’s MCP server can be used with various applications that support the Model Context Protocol, such as:
+Add the following to your `claude_desktop_config.json`:
 
-- [**Cursor**](https://docs.cursor.com/context/model-context-protocol#configuring-mcp-servers)
-- [**Claude Desktop**](https://modelcontextprotocol.io/quickstart/user)
-- [**Zed**](https://zed.dev/docs/assistant/model-context-protocol)
+```
+{
+  "mcpServers": {
+    "agentrpc": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "agentrpc",
+        "mcp"
+      ],
+      "env": {
+        "AGENTRPC_API_SECRET": "<YOUR_API_SECRET>"
+      }
+    }
+  }
+}
+```
 
-For a quickstart guide on MCP, refer to the [Model Context Protocol Quickstart](https://modelcontextprotocol.io/quickstart/user).
+[More Info](https://modelcontextprotocol.io/quickstart/user)
+
+### Cursor
+
+Add the following to your `~/.cursor/mcp.json`:
+
+```
+{
+  "mcpServers": {
+    "agentrpc": {
+      "command": "npx",
+      "args": ["-y", "agentrpc", "mcp"],
+      "env": {
+        "AGENTRPC_API_SECRET": "<YOUR_API_SECRET>"
+      }
+    }
+  }
+}
+```
+
+[More Info](https://docs.cursor.com/context/model-context-protocol#configuring-mcp-servers)
+
+### Zed
+
+[**Zed**](https://zed.dev/docs/assistant/model-context-protocol)
 
 ## API
 

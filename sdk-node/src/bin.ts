@@ -5,16 +5,14 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { z, ZodRawShape, ZodTypeAny } from "zod";
 import { createApiClient } from "./create-client";
 
-// Firt arg Command name
 const commandName = process.argv[2];
-
-// Second arg API Secret
-const apiSecret = process.argv[3];
 
 if (!commandName || commandName !== "mcp") {
   console.error("Invalid command. Supported commands: mcp");
   process.exit(1);
 }
+
+const apiSecret = process.env.AGENTRPC_API_SECRET;
 
 if (!apiSecret) {
   console.error("No API Secret provided");
@@ -50,7 +48,7 @@ async function main() {
       clusterResult.body,
     );
 
-    return;
+    process.exit(1);
   }
 
   const clusterId = clusterResult.body.clusterId;
@@ -68,13 +66,10 @@ async function main() {
       toolResponse.body,
     );
 
-    return;
+    process.exit(1);
   }
 
   for (const tool of toolResponse.body) {
-    console.info("Registering tool:", {
-      name: tool.name,
-    });
     server.tool(
       tool.name,
       tool.description ?? "",
@@ -148,7 +143,6 @@ async function main() {
 
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  console.info("AgentRPC MCP Server running on stdio");
 }
 
 main().catch((error) => {
