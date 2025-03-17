@@ -1,0 +1,45 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "theme": "willow",
+  "name": "AgentRPC",
+  "colors": {
+    "primary": "#4B5563",
+    "light": "#9CA3AF",
+    "dark": "#1F2937"
+  },
+  "favicon": "/favicon.png",
+  "navigation": {
+    "pages": [
+      "introduction",
+      "quickstart",
+      "sdks"
+    ]
+  },
+  "appearance": {
+    "default": "light"
+  },
+  "logo": {
+    "light": "/logo/logo.png",
+    "dark": "/logo/logo.png"
+  },
+  "navbar": {
+    "links": [
+      {
+        "label": "Support",
+        "href": "mailto:support@agentrpc.com"
+      }
+    ],
+    "primary": {
+      "type": "button",
+      "label": "Dashboard",
+      "href": "https://app.agentrpc.com"
+    }
+  },
+  "footer": {
+    "socials": {
+      "x": "https://x.com/agentrpc",
+      "github": "https://github.com/agentrpc/agentrpc",
+      "linkedin": "https://linkedin.com/company/agentrpc"
+    }
+  }
+}

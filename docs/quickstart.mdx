@@ -1,0 +1,128 @@
+---
+title: 'Quickstart'
+description: 'Get started with AgentRPC in minutes'
+---
+
+### 1. Get an API Key
+
+<Steps>
+  <Step title="Create an account">
+    Visit [AgentRPC Dashboard](https://app.agentrpc.com) and sign up for a free account.
+  </Step>
+  <Step title="Generate an API key">
+    Once logged in, navigate to the API Keys section and create a new API key.
+  </Step>
+  <Step title="Copy your API key">
+    Copy your API key to use in the next steps. Keep this key secure as it provides access to your AgentRPC account.
+  </Step>
+</Steps>
+
+### 2. Register a Tool
+
+Choose your preferred language to register a tool with AgentRPC:
+
+<Tabs>
+  <Tab title="TypeScript">
+    ```typescript
+    import { AgentRPC } from "agentrpc";
+    import { z } from "zod";
+
+    const client = new AgentRPC({
+      apiSecret: "YOUR_API_SECRET",
+    });
+
+    client.register({
+      name: "getWeather",
+      schema: z.object({ location: z.string() }),
+      handler: async ({ location }) => {
+        // Implementation details
+        const data = await fetchWeatherData(location);
+        return data;
+      }
+    });
+
+    await client.listen();
+    ```
+  </Tab>
+  <Tab title="Go">
+    ```go
+    package main
+
+    import (
+      "context"
+      "fmt"
+
+      "github.com/agentrpc/agentrpc/sdk-go"
+    )
+
+    func main() {
+      client := agentrpc.NewClient(agentrpc.ClientOptions{
+        APISecret: "YOUR_API_SECRET",
+      })
+
+      client.Register("getWeather", func(ctx context.Context, params map[string]interface{}) (interface{}, error) {
+        location, ok := params["location"].(string)
+        if !ok {
+          return nil, fmt.Errorf("location must be a string")
+        }
+        
+        // Implementation details
+        data, err := fetchWeatherData(location)
+        if err != nil {
+          return nil, err
+        }
+        
+        return data, nil
+      })
+
+      if err := client.Listen(context.Background()); err != nil {
+        panic(err)
+      }
+    }
+    ```
+  </Tab>
+</Tabs>
+
+For more detailed examples, check out the SDK repositories:
+- [TypeScript SDK](https://github.com/agentrpc/agentrpc/tree/main/sdk-node)
+- [Go SDK](https://github.com/agentrpc/agentrpc/tree/main/sdk-go)
+
+### 3. Connect to an Agent
+
+<Tabs>
+  <Tab title="OpenAI SDK">
+    ```python
+    from agentrpc import AgentRPC
+    from openai import OpenAI
+
+    openai = OpenAI(api_key="YOUR_OPENAI_API_KEY")
+    agentrpc = AgentRPC(api_secret="YOUR_API_SECRET")
+
+    tools = agentrpc.openai.get_tools()
+
+    completion = openai.chat.completions.create(
+        model="gpt-4o",
+        messages=[{
+            "role": "user",
+            "content": "What is the weather in Melbourne?"
+        }],
+        tools=tools,
+    )
+
+    if completion.choices[0].message.tool_calls:
+        for tool_call in completion.choices[0].message.tool_calls:
+            print("Agent is calling Tool", tool_call.function.name)
+            result = agentrpc.openai.execute_tool(tool_call)
+            print(result)
+    ```
+  </Tab>
+  <Tab title="MCP Server">
+    ```
+    Coming soon - Connect to the hosted MCP server
+    ```
+  </Tab>
+</Tabs>
+
+### 4. Monitor and Manage Tools
+
+Navigate to the [AgentRPC Dashboard](https://app.agentrpc.com) to monitor tool usage, health, and performance.
