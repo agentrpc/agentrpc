@@ -1,4 +1,3 @@
-```
 # AgentRPC Go SDK
 
 A universal RPC layer for AI agents. Connect to any function, any language, any framework, in minutes.
