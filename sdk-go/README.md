@@ -17,13 +17,13 @@ go get github.com/agentrpc/go-sdk
 package main
 
 import (
-	"github.com/agentrpc/agentrpc/sdk-go"
+  "github.com/agentrpc/agentrpc/sdk-go"
 )
 
 func main() {
-	client := agentrpc.New(agentrpc.Options{
-		APISecret: "YOUR_API_SECRET",
-	})
+  client, err := agentrpc.New(agentrpc.Options{
+    APISecret: "YOUR_API_SECRET",
+  })
 }
 ```
 
@@ -31,23 +31,17 @@ func main() {
 
 ```go
 func main() {
-	client := agentrpc.New(Options{
-		APISecret: "YOUR_API_SECRET",
-	})
+  client, err := agentrpc.New(agentrpc.Options{
+    APISecret: "YOUR_API_SECRET",
+  })
 
-
-  sayHello, err := client.Register(Tool{
-    Handler:        func(input EchoInput) string {
-      didCallSayHello = true
+  err = client.Register(agentrpc.Tool{
+    Handler:     func(input EchoInput) string {
       return "Hello " + input.Input
     },
     Name:        "SayHello",
     Description: "A simple greeting function",
   })
-
-  client.Listen()
-
-  defer client.Unlisten()
 }
 ```
 
@@ -56,7 +50,7 @@ func main() {
 ```go
 err := client.Listen()
 if err != nil {
-	log.Fatal(err)
+  log.Fatal(err)
 }
 ```
 
