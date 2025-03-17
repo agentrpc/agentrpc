@@ -12,7 +12,6 @@
     "groups": [
       {
         "group": "Getting Started",
-        "icon": "rocket",
         "pages": [
           "introduction",
           "quickstart"
