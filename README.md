@@ -16,11 +16,11 @@ AgentRPC wraps your functions in a universal RPC interface, connecting them to a
 - Model Context Protocol (MCP)
 - OpenAI-compatible tool definitions (OpenAI, Anthropic, LiteLLM, OpenRouter, etc.)
 
-<div align="center" style="width: 500px; margin: 0 auto;">
+<p align="center">
 
-![deployment](./assets/deployment.png)
+![deployment](./assets/deployment.png | width=500)
 
-</div>
+</p>
 
 ## How It Works
 
