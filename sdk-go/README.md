@@ -21,6 +21,7 @@ import (
 
 func main() {
   client, err := agentrpc.New(agentrpc.Options{
+    // Get your API secret from https://app.agentrpc.com
     APISecret: "YOUR_API_SECRET",
   })
 }

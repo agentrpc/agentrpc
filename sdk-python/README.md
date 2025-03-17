@@ -18,6 +18,7 @@ pip install agentrpc
 from agentrpc import AgentRPC
 
 agentrpc = AgentRPC(
+  # Get your API secret from https://app.agentrpc.com
   api_secret="YOUR_API_SECRET"
 )
 ```

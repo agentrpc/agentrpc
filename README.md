@@ -13,8 +13,11 @@ A universal RPC layer for AI agents. Connect to any function, any language, acro
 
 ## Quick Start
 
+Details for each SDK are located in their respective directories.
+
 - [Go SDK](sdk-go/README.md)
 - [Node.js SDK](sdk-node/README.md)
 - [Python SDK](sdk-python/README.md)
 
+[Get your API key](https://app.agentrpc.com)
 Check out our [examples](./examples) directory for working code samples in each language.

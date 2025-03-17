@@ -16,6 +16,7 @@ npm install agentrpc
 import { AgentRPC } from "agentrpc";
 
 const client = new AgentRPC({
+  // Get your API secret from https://app.agentrpc.com
   apiSecret: "YOUR_API_SECRET",
 });
 ```
