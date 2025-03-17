@@ -1,0 +1,243 @@
+name: Build, Test
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+
+jobs:
+  check_changes:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      sdk_node: ${{ steps.filter.outputs.sdk_node }}
+      sdk_dotnet: ${{ steps.filter.outputs.sdk_dotnet }}
+      sdk_go: ${{ steps.filter.outputs.sdk_go }}
+      sdk_python: ${{ steps.filter.outputs.sdk_python }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Filter changed files
+        uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            sdk_node:
+              - 'sdk-node/**'
+            sdk_dotnet:
+              - 'sdk-dotnet/**'
+            sdk_go:
+              - 'sdk-go/**'
+            sdk_python:
+              - 'sdk-python/**'
+
+  build-node:
+    needs: check_changes
+    if: ${{ needs.check_changes.outputs.sdk_node == 'true' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: sdk-node
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+          cache-dependency-path: sdk-node/package-lock.json
+      - name: Install dependencies
+        run: npm ci
+      - name: Build package
+        run: npm run build
+
+  test-node:
+    needs: [check_changes, build-node]
+    if: ${{ needs.check_changes.outputs.sdk_node == 'true' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: sdk-node
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Set up Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: "npm"
+          cache-dependency-path: sdk-node/package-lock.json
+      - name: Install dependencies
+        run: npm ci
+      - name: Run tests
+        run: npm run test
+        env:
+          INFERABLE_TEST_API_ENDPOINT: "https://api.agentrpc.com"
+          INFERABLE_TEST_CLUSTER_ID: ${{ secrets.INFERABLE_TEST_CLUSTER_ID }}
+          INFERABLE_TEST_API_SECRET: ${{ secrets.INFERABLE_TEST_API_SECRET }}
+
+  build-dotnet:
+    needs: check_changes
+    if: ${{ needs.check_changes.outputs.sdk_dotnet == 'true' }}
+    runs-on: windows-latest
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: sdk-dotnet
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+      - name: Restore dependencies
+        run: dotnet restore
+      - name: Build
+        run: dotnet build --configuration Release --no-restore
+
+  test-dotnet:
+    needs: [check_changes, build-dotnet]
+    if: ${{ needs.check_changes.outputs.sdk_dotnet == 'true' }}
+    runs-on: windows-latest
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: sdk-dotnet
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+      - name: Restore dependencies
+        run: dotnet restore
+      - name: Test
+        run: dotnet test --no-restore
+        env:
+          INFERABLE_TEST_API_ENDPOINT: "https://api.agentrpc.com"
+          INFERABLE_TEST_CLUSTER_ID: ${{ secrets.INFERABLE_TEST_CLUSTER_ID }}
+          INFERABLE_TEST_API_SECRET: ${{ secrets.INFERABLE_TEST_API_SECRET }}
+
+  build-go:
+    needs: check_changes
+    if: ${{ needs.check_changes.outputs.sdk_go == 'true' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: sdk-go
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.22"
+      - name: Check formatting
+        run: |
+          if [ "$(gofmt -l . | wc -l)" -gt 0 ]; then
+            echo "The following files are not formatted correctly:"
+            gofmt -l .
+            exit 1
+          fi
+      - name: Get dependencies
+        run: go mod download
+      - name: Build
+        run: go build -v ./...
+
+  test-go:
+    needs: [check_changes, build-go]
+    if: ${{ needs.check_changes.outputs.sdk_go == 'true' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: sdk-go
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.22"
+      - name: Get dependencies
+        run: go mod download
+      - name: Test
+        run: go test -v ./...
+        env:
+          INFERABLE_TEST_API_ENDPOINT: "https://api.agentrpc.com"
+          INFERABLE_TEST_CLUSTER_ID: ${{ secrets.INFERABLE_TEST_CLUSTER_ID }}
+          INFERABLE_TEST_API_SECRET: ${{ secrets.INFERABLE_TEST_API_SECRET }}
+
+  build-python:
+    needs: check_changes
+    if: ${{ needs.check_changes.outputs.sdk_python == 'true' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: sdk-python
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.8"
+      - name: Install UV
+        run: curl -LsSf https://astral.sh/uv/install.sh | sh
+      - name: Install dependencies
+        run: make install
+      # - name: Lint
+      #   run: make lint
+      - name: Build package
+        run: make build
+
+  test-python:
+    needs: [check_changes, build-python]
+    if: ${{ needs.check_changes.outputs.sdk_python == 'true' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: sdk-python
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.8"
+      - name: Install UV
+        run: curl -LsSf https://astral.sh/uv/install.sh | sh
+      - name: Install dependencies
+        run: make install
+      - name: Run tests
+        run: make test
+        env:
+          INFERABLE_TEST_API_ENDPOINT: "https://api.agentrpc.com"
+          INFERABLE_TEST_CLUSTER_ID: ${{ secrets.INFERABLE_TEST_CLUSTER_ID }}
+          INFERABLE_TEST_API_SECRET: ${{ secrets.INFERABLE_TEST_API_SECRET }}
