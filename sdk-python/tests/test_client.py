@@ -23,10 +23,10 @@ def test_client_init():
     assert isinstance(client.openai, OpenAIIntegration)
 
 
-def test_client_openai_get_tools():
+def test_client_openai_completions_get_tools():
     """Test client initialization."""
     client = AgentRPC(api_secret, api_endpoint)
-    tools = client.openai.get_tools()
+    tools = client.openai.completions.get_tools()
     print(tools)
 
 

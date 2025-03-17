@@ -17,7 +17,7 @@ pip install agentrpc
 ```python
 from agentrpc import AgentRPC
 
-client = AgentRPC(
+agentrpc = AgentRPC(
   api_secret="YOUR_API_SECRET"
 )
 ```
@@ -27,7 +27,29 @@ client = AgentRPC(
 
 AgentRPC provides integration with OpenAI's function calling capabilities, allowing you to expose your registered RPC functions as tools for OpenAI models to use.
 
-### `client.openai.get_tools()`
+### Agents SDK
+
+#### `client.openai.agents.get_tools()`
+
+The `get_tools()` method returns your registered AgentRPC functions as OpenAI Agent tools.
+
+```python
+# First register your functions with AgentRPC (Locally or on another machine)
+
+# Attach the tools to the Agent
+agent = Agent(name="AgentRPC Agent", tools=agentrpc.openai.agents.get_tools())
+
+result = await Runner.run(
+    agent,
+    input="What is the weather in Melbourne?",
+)
+
+print(result.final_output)
+
+```
+
+### Completions SDK
+#### `client.openai.completions.get_tools()`
 
 The `get_tools()` method returns your registered AgentRPC functions formatted as OpenAI tools, ready to be passed to OpenAI's API.
 
@@ -35,7 +57,7 @@ The `get_tools()` method returns your registered AgentRPC functions formatted as
 # First register your functions with AgentRPC (Locally or on another machine)
 
 # Then get the tools formatted for OpenAI
-tools = client.openai.get_tools()
+tools = agentrpc.openai.get_tools()
 
 # Pass these tools to OpenAI
 chat_completion = openai.chat.completions.create(
@@ -46,7 +68,7 @@ chat_completion = openai.chat.completions.create(
 )
 ```
 
-### `client.openai.execute_tool(tool_call)`
+#### `client.openai.completions.execute_tool(tool_call)`
 
 The `execute_tool()` method executes an OpenAI tool call against your registered AgentRPC functions.
 
