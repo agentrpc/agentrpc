@@ -16,7 +16,7 @@ func main() {
 	client.Register(agentrpc.Tool{
 		Name:        "getWeather",
 		Description: "Return weather information at a given location",
-		Handler:        func(input struct{ location string }) string {
+		Handler: func(input struct{ location string }) string {
 			return "probably raining"
 		},
 	})
@@ -31,4 +31,3 @@ func main() {
 	<-sigChan
 	defer client.Unlisten()
 }
-
