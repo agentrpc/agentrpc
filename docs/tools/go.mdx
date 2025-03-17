@@ -25,14 +25,14 @@ import (
 )
 
 func main() {
-  client, err := agentrpc.New(agentrpc.Options{
+  rpc, err := agentrpc.New(agentrpc.Options{
     APISecret: "YOUR_API_SECRET",
   })
   if err != nil {
     panic(err)
   }
 
-  err = client.Register(agentrpc.Tool{
+  err = rpc.Register(agentrpc.Tool{
     Handler: func(input map[string]interface{}) (interface{}, error) {
       name, ok := input["name"].(string)
       if !ok {
@@ -47,13 +47,13 @@ func main() {
     panic(err)
   }
 
-  err = client.Listen()
+  err = rpc.Listen()
   if err != nil {
     panic(err)
   }
 
   // To stop listening
-  // client.Unlisten()
+  // rpc.Unlisten()
 }
 ```
 

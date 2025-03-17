@@ -26,7 +26,7 @@ const rpc = new AgentRPC({
 ```ts
 import { z } from "zod";
 
-client.register({
+rpc.register({
   name: "hello",
   schema: z.object({ name: z.string() }),
   handler: async ({ name }) => `Hello ${name}`,
@@ -41,13 +41,13 @@ client.register({
 ### Starting the Listener
 
 ```ts
-await client.listen();
+await rpc.listen();
 ```
 
 ### Stopping the Listener
 
 ```ts
-await client.unlisten();
+await rpc.unlisten();
 ```
 
 ## MCP Server

@@ -24,14 +24,14 @@
         "pages": [
           "tools/typescript",
           "tools/go",
-          "tools/python",
-          "tools/dotnet"
+          "tools/python"
         ]
       },
       {
         "group": "Consuming Tools",
         "icon": "plug",
         "pages": [
+          "integrations/mcp-server",
           "integrations/openai",
           "integrations/anthropic",
           "integrations/openrouter"

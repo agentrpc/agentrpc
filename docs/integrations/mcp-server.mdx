@@ -1,0 +1,57 @@
+---
+title: 'MCP Server'
+description: 'Start an MCP (Model Context Protocol) server with AgentRPC'
+icon: 'server'
+---
+
+MCP enables developers to build secure, two-way connections between their data sources and AI-powered tools through a simple architecture: developers can either expose their data through MCP servers or build AI applications (MCP clients) that connect to these servers.
+
+## Starting an MCP Server
+
+The TypeScript SDK includes an MCP server that can be started using:
+
+```bash
+npx agentrpc mcp <YOUR_API_SECRET>
+```
+
+This allows you to connect your data sources to AI assistants like Claude, enabling them to access relevant information and produce better responses.
+
+## Configuration Examples
+
+Here are some examples of how to configure your MCP server for different MCP clients.
+
+### Claude
+
+```json
+{
+  "mcpServers": {
+    "agentrpc": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "agentrpc",
+        "mcp"
+      ],
+      "env": {
+        "AGENTRPC_API_SECRET": "<YOUR_API_SECRET>"
+      }
+    }
+  }
+}
+```
+
+### Cursor
+
+```json
+{
+  "mcpServers": {
+    "agentrpc": {
+      "command": "npx",
+      "args": ["-y", "agentrpc", "mcp"],
+      "env": {
+        "AGENTRPC_API_SECRET": "<YOUR_API_SECRET>"
+      }
+    }
+  }
+}
+```

@@ -22,7 +22,7 @@ const rpc = new AgentRPC({
   apiSecret: "YOUR_API_SECRET",
 });
 
-client.register({
+rpc.register({
   name: "hello",
   schema: z.object({ name: z.string() }),
   handler: async ({ name }) => `Hello ${name}`,
@@ -33,7 +33,7 @@ client.register({
   },
 });
 
-await client.listen();
+await rpc.listen();
 ```
 
 ## MCP Server
