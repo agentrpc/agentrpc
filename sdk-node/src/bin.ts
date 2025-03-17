@@ -33,26 +33,13 @@ const server = new McpServer({
 });
 
 async function main() {
-  const clusterResult = await client.createMachine({
-    headers: {
-      "x-machine-id": crypto.randomUUID(),
-    },
-    body: {
-      tools: [],
-    },
-  });
 
-  if (clusterResult.status !== 200) {
-    console.error(
-      "Failed to get AgentRPC Cluster ID",
-      clusterResult.status,
-      clusterResult.body,
-    );
+    const [prefix, clusterId, rand] = apiSecret!.split("_");
 
-    process.exit(1);
-  }
-
-  const clusterId = clusterResult.body.clusterId;
+    if (prefix !== "sk" || !clusterId || !rand) {
+      console.error("Invalid API Secret.");
+      process.exit(1);
+    }
 
   const toolResponse = await client.listTools({
     params: {
