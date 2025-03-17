@@ -13,8 +13,8 @@
     "test": "jest ./src --runInBand --forceExit --setupFiles dotenv/config",
     "test:dev": "jest ./src --watch --setupFiles dotenv/config"
   },
-  "author": "Inferable, Inc.",
-  "license": "MIT",
+  "author": "AgentRPC",
+  "license": "Apache-2.0",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.7.0",
     "@ts-rest/core": "^3.28.0",
@@ -52,6 +52,7 @@
   },
   "homepage": "https://www.agentrpc.com",
   "bugs": {
-    "email": "hi@inferable.ai"
+    "email": "founders@agentrpc.com",
+    "url": "https://github.com/agentrpc/agentrpc/issues"
   }
 }
