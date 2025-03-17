@@ -10,15 +10,15 @@ import (
 
 func main() {
 	client, _ := agentrpc.New(agentrpc.Options{
-		APISecret: "",
+		APISecret: os.Getenv("AGENTRPC_API_SECRET"),
 	})
 
 	client.Register(agentrpc.Tool{
-		Handler:        func(input struct{ Input string }) string {
-			return "Hello " + input.Input
+		Name:        "getWeather",
+		Description: "Return weather information at a given location",
+		Handler:        func(input struct{ location string }) string {
+			return "probably raining"
 		},
-		Name:        "SayHello",
-		Description: "A simple greeting function",
 	})
 
 	go func() {
