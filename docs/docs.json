@@ -9,14 +9,39 @@
   },
   "favicon": "/favicon.png",
   "navigation": {
-    "pages": [
-      "introduction",
-      "quickstart",
-      "sdks"
+    "groups": [
+      {
+        "group": "Getting Started",
+        "icon": "rocket",
+        "pages": [
+          "introduction",
+          "quickstart"
+        ]
+      },
+      {
+        "group": "Registering Tools",
+        "icon": "toolbox",
+        "pages": [
+          "tools/typescript",
+          "tools/go",
+          "tools/python",
+          "tools/dotnet"
+        ]
+      },
+      {
+        "group": "Consuming Tools",
+        "icon": "plug",
+        "pages": [
+          "integrations/openai",
+          "integrations/anthropic",
+          "integrations/openrouter"
+        ]
+      }
     ]
   },
   "appearance": {
-    "default": "light"
+    "default": "light",
+    "strict": true
   },
   "logo": {
     "light": "/logo/logo.png",

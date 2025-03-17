@@ -1,0 +1,31 @@
+---
+title: 'Python SDK'
+description: 'Register tools with the Python SDK'
+icon: 'python'
+---
+
+The Python SDK provides a Pythonic way to register functions as tools for AI agents.
+
+## Installation
+
+```bash
+pip install agentrpc
+```
+
+## Basic Usage
+
+```python
+from agentrpc import AgentRPC
+
+client = AgentRPC(api_secret="YOUR_API_SECRET")
+
+@client.register
+def get_weather(location: str) -> dict:
+    """Get the weather for a specific location."""
+    # Implementation details
+    return {"temperature": 72, "condition": "sunny", "location": location}
+
+client.listen()
+```
+
+For more details, visit the [Python SDK GitHub repository](https://github.com/agentrpc/agentrpc/tree/main/sdk-python). 

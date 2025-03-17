@@ -1,0 +1,112 @@
+---
+title: 'OpenRouter Integration'
+description: 'Connect multiple AI models through OpenRouter to your AgentRPC tools'
+icon: 'router'
+---
+
+OpenRouter provides an OpenAI-compatible API for tool calling across multiple AI models and providers. This allows you to use the same code to interact with different models that support function calling.
+
+## TypeScript/JavaScript
+
+```typescript
+import OpenAI from 'openai';
+
+// Configure the OpenAI SDK to use OpenRouter's API
+const openai = new OpenAI({
+  baseURL: "https://openrouter.ai/api/v1",
+  apiKey: "YOUR_OPENROUTER_API_KEY",
+});
+
+// Get tools formatted for OpenAI (these will work with OpenRouter)
+const tools = await client.OpenAI.getTools();
+
+// Use with OpenRouter
+const chatCompletion = await openai.chat.completions.create({
+  model: "google/gemini-2.0-flash-001", // Can use any model that supports tool calling
+  messages: messages,
+  tools: tools,
+});
+
+// Execute tool calls
+if (responseMessage.tool_calls && responseMessage.tool_calls.length > 0) {
+  for (const toolCall of responseMessage.tool_calls) {
+    const result = await client.OpenAI.executeTool(toolCall);
+    // Use the result...
+    
+    // Add the tool response to the messages
+    messages.push({
+      role: "tool",
+      tool_call_id: toolCall.id,
+      name: toolCall.function.name,
+      content: JSON.stringify(result),
+    });
+  }
+  
+  // Continue the conversation with the tool results
+  const finalResponse = await openai.chat.completions.create({
+    model: "google/gemini-2.0-flash-001",
+    messages: messages,
+    tools: tools,
+  });
+}
+```
+
+## Python
+
+```python
+from openai import OpenAI
+from agentrpc import AgentRPC
+import json
+
+# Configure the OpenAI client to use OpenRouter's API
+openai = OpenAI(
+    base_url="https://openrouter.ai/api/v1",
+    api_key="YOUR_OPENROUTER_API_KEY"
+)
+
+agentrpc = AgentRPC(api_secret="YOUR_API_SECRET")
+
+# Get tools formatted for OpenAI
+tools = agentrpc.openai.get_tools()
+
+# Initial messages
+messages = [
+    {"role": "system", "content": "You are a helpful assistant."},
+    {"role": "user", "content": "What's the weather in San Francisco?"}
+]
+
+# Use tools with OpenRouter
+completion = openai.chat.completions.create(
+    model="google/gemini-2.0-flash-001",  # Can use any model that supports tool calling
+    messages=messages,
+    tools=tools,
+)
+
+# Process tool calls if any
+if completion.choices[0].message.tool_calls:
+    # Add the assistant's response with tool calls to the messages
+    messages.append(completion.choices[0].message.dict())
+    
+    # Process each tool call
+    for tool_call in completion.choices[0].message.tool_calls:
+        # Execute the tool
+        result = agentrpc.openai.execute_tool(tool_call)
+        
+        # Add the tool response to the messages
+        messages.append({
+            "role": "tool",
+            "tool_call_id": tool_call.id,
+            "name": tool_call.function.name,
+            "content": json.dumps(result),
+        })
+    
+    # Continue the conversation with the tool results
+    final_response = openai.chat.completions.create(
+        model="google/gemini-2.0-flash-001",
+        messages=messages,
+        tools=tools,
+    )
+    
+    # Get the final answer
+    final_answer = final_response.choices[0].message.content
+``` 

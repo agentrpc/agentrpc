@@ -1,0 +1,56 @@
+---
+title: 'OpenAI Integration'
+description: 'Connect OpenAI models to your AgentRPC tools'
+icon: 'circle'
+---
+
+You can use the `client.OpenAI` object to get tools formatted for the OpenAI SDK.
+
+## TypeScript/JavaScript
+
+```typescript
+// Get tools formatted for OpenAI
+const tools = await client.OpenAI.getTools();
+
+// Pass these tools to OpenAI
+const chatCompletion = await openai.chat.completions.create({
+  model: "gpt-4o",
+  messages: messages,
+  tools: tools,
+  tool_choice: "auto",
+});
+
+// Execute tool calls from OpenAI's response
+if (responseMessage.tool_calls && responseMessage.tool_calls.length > 0) {
+  for (const toolCall of responseMessage.tool_calls) {
+    const result = await client.OpenAI.executeTool(toolCall);
+    // Use the result...
+  }
+}
+```
+
+## Python
+
+```python
+from agentrpc import AgentRPC
+from openai import OpenAI
+
+openai = OpenAI(api_key="YOUR_OPENAI_API_KEY")
+agentrpc = AgentRPC(api_secret="YOUR_API_SECRET")
+
+# Get tools formatted for OpenAI
+tools = agentrpc.openai.get_tools()
+
+# Use tools with OpenAI
+completion = openai.chat.completions.create(
+    model="gpt-4o",
+    messages=[{"role": "user", "content": "What's the weather in San Francisco?"}],
+    tools=tools,
+)
+
+# Execute tool calls
+if completion.choices[0].message.tool_calls:
+    for tool_call in completion.choices[0].message.tool_calls:
+        result = agentrpc.openai.execute_tool(tool_call)
+        # Use the result...
+``` 
