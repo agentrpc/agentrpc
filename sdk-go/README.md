@@ -31,11 +31,11 @@ func main() {
 
 ```go
 func main() {
-  client, err := agentrpc.New(agentrpc.Options{
+  rpc, err := agentrpc.New(agentrpc.Options{
     APISecret: "YOUR_API_SECRET",
   })
 
-  err = client.Register(agentrpc.Tool{
+  err = rpc.Register(agentrpc.Tool{
     Handler:     func(input EchoInput) string {
       return "Hello " + input.Input
     },
@@ -48,7 +48,7 @@ func main() {
 ### Starting the Listener
 
 ```go
-err := client.Listen()
+err := rpc.Listen()
 if err != nil {
   log.Fatal(err)
 }
@@ -57,7 +57,7 @@ if err != nil {
 ### Stopping the Listener
 
 ```go
-client.Unlisten()
+rpc.Unlisten()
 ```
 
 ## API
@@ -74,7 +74,7 @@ Creates a new AgentRPC client.
 | `Endpoint`  | string | `https://api.agentrpc.com` | Custom API endpoint. |
 | `MachineID` | string | Automatically generated    | Custom machine ID.   |
 
-### `client.Register(tool Tool)`
+### `rpc.Register(tool Tool)`
 
 Registers a tool.
 
@@ -82,11 +82,11 @@ Registers a tool.
 - `Handler`: Function to process input.
 
 
-### `client.Listen() error`
+### `rpc.Listen() error`
 
 Starts listening for requests.
 
-### `client.Unlisten() error`
+### `rpc.Unlisten() error`
 
 Stops all running listeners.
 ```

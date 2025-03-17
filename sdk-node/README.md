@@ -15,7 +15,7 @@ npm install agentrpc
 ```ts
 import { AgentRPC } from "agentrpc";
 
-const client = new AgentRPC({
+const rpc = new AgentRPC({
   // Get your API secret from https://app.agentrpc.com
   apiSecret: "YOUR_API_SECRET",
 });
@@ -26,7 +26,7 @@ const client = new AgentRPC({
 ```ts
 import { z } from "zod";
 
-client.register({
+rpc.register({
   name: "hello",
   schema: z.object({ name: z.string() }),
   handler: async ({ name }) => `Hello ${name}`,
@@ -41,13 +41,13 @@ client.register({
 ### Starting the Listener
 
 ```ts
-await client.listen();
+await rpc.listen();
 ```
 
 ### Stopping the Listener
 
 ```ts
-await client.unlisten();
+await rpc.unlisten();
 ```
 
 ## MCP Server
@@ -114,7 +114,7 @@ Add the following to your `~/.cursor/mcp.json`:
 
 AgentRPC provides integration with OpenAI's function calling capabilities, allowing you to expose your registered RPC functions as tools for OpenAI models to use.
 
-### `client.OpenAI.getTools()`
+### `rpc.OpenAI.getTools()`
 
 The `getTools()` method returns your registered AgentRPC functions formatted as OpenAI tools, ready to be passed to OpenAI's API.
 
@@ -122,7 +122,7 @@ The `getTools()` method returns your registered AgentRPC functions formatted as 
 // First register your functions with AgentRPC (Locally or on another machine)
 
 // Then get the tools formatted for OpenAI
-const tools = await client.OpenAI.getTools();
+const tools = await rpc.OpenAI.getTools();
 
 // Pass these tools to OpenAI
 const chatCompletion = await openai.chat.completions.create({
@@ -133,7 +133,7 @@ const chatCompletion = await openai.chat.completions.create({
 });
 ```
 
-### `client.OpenAI.executeTool(toolCall)`
+### `rpc.OpenAI.executeTool(toolCall)`
 
 The `executeTool()` method executes an OpenAI tool call against your registered AgentRPC functions.
 
@@ -146,7 +146,7 @@ if (responseMessage.tool_calls && responseMessage.tool_calls.length > 0) {
       messages.push({
         role: "tool",
         tool_call_id: toolCall.id,
-        content: await client.OpenAI.executeTool(toolCall),
+        content: await rpc.OpenAI.executeTool(toolCall),
       });
     } catch (error) {
       console.error(`Error executing tool ${toolCall.function.name}:`, error);

@@ -1,0 +1,47 @@
+---
+title: 'TypeScript SDK'
+description: 'Register tools with the TypeScript SDK'
+icon: 'js'
+---
+
+The TypeScript SDK provides a simple way to register functions as tools for AI agents.
+
+## Installation
+
+```bash
+npm install agentrpc
+```
+
+## Basic Usage
+
+```typescript
+import { AgentRPC } from "agentrpc";
+import { z } from "zod";
+
+const rpc = new AgentRPC({
+  apiSecret: "YOUR_API_SECRET",
+});
+
+rpc.register({
+  name: "hello",
+  schema: z.object({ name: z.string() }),
+  handler: async ({ name }) => `Hello ${name}`,
+  // Optional configuration
+  config: {
+    retryCountOnStall: 3,
+    timeoutSeconds: 30,
+  },
+});
+
+await rpc.listen();
+```
+
+## MCP Server
+
+The TypeScript SDK includes an MCP (Model Context Protocol) server that can be started using:
+
+```bash
+npx agentrpc mcp <YOUR_API_SECRET>
+```
+
+For more details, visit the [TypeScript SDK GitHub repository](https://github.com/agentrpc/agentrpc/tree/main/sdk-node). 

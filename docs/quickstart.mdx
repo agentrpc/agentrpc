@@ -1,6 +1,7 @@
 ---
 title: 'Quickstart'
 description: 'Get started with AgentRPC in minutes'
+icon: 'rocket'
 ---
 
 ### 1. Get an API Key
@@ -27,11 +28,11 @@ Choose your preferred language to register a tool with AgentRPC:
     import { AgentRPC } from "agentrpc";
     import { z } from "zod";
 
-    const client = new AgentRPC({
+    const rpc = new AgentRPC({
       apiSecret: "YOUR_API_SECRET",
     });
 
-    client.register({
+    rpc.register({
       name: "getWeather",
       description: "Return weather information at a given location",
       schema: z.object({ location: z.string() }),
@@ -42,7 +43,7 @@ Choose your preferred language to register a tool with AgentRPC:
       }
     });
 
-    await client.listen();
+    await rpc.listen();
     ```
   </Tab>
   <Tab title="Go">
@@ -57,11 +58,11 @@ Choose your preferred language to register a tool with AgentRPC:
     )
 
     func main() {
-      client := agentrpc.New(agentrpc.Options{
+      rpc := agentrpc.New(agentrpc.Options{
         APISecret: "YOUR_API_SECRET",
       })
 
-      client.Register(agentrpc.Tool{
+      rpc.Register(agentrpc.Tool{
         Name:        "getWeather",
         Description: "Return weather information at a given location",
         Handler: func(input struct{ location string }) string {
@@ -81,14 +82,14 @@ Choose your preferred language to register a tool with AgentRPC:
       })
 
       go func() {
-        client.Listen()
+        rpc.Listen()
       }()
 
       sigChan := make(chan os.Signal, 1)
       signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
 
       <-sigChan
-      defer client.Unlisten()
+      defer rpc.Unlisten()
     }
     ```
   </Tab>

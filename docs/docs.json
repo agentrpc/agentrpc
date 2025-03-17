@@ -9,14 +9,39 @@
   },
   "favicon": "/favicon.png",
   "navigation": {
-    "pages": [
-      "introduction",
-      "quickstart",
-      "sdks"
+    "groups": [
+      {
+        "group": "Getting Started",
+        "pages": [
+          "introduction",
+          "quickstart",
+          "how-it-works"
+        ]
+      },
+      {
+        "group": "Registering Tools",
+        "icon": "toolbox",
+        "pages": [
+          "tools/typescript",
+          "tools/go",
+          "tools/python"
+        ]
+      },
+      {
+        "group": "Consuming Tools",
+        "icon": "plug",
+        "pages": [
+          "integrations/mcp-server",
+          "integrations/openai",
+          "integrations/anthropic",
+          "integrations/openrouter"
+        ]
+      }
     ]
   },
   "appearance": {
-    "default": "light"
+    "default": "light",
+    "strict": true
   },
   "logo": {
     "light": "/logo/logo.png",
