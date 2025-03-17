@@ -46,7 +46,7 @@ export class AgentRPC {
     return require(path.join(__dirname, "..", "package.json")).version;
   }
 
-  private clusterId?: string;
+  private clusterId: string;
 
   private apiSecret: string;
   private endpoint: string;
@@ -83,11 +83,14 @@ export class AgentRPC {
       throw new AgentRPCError(`No API Secret provided.`);
     }
 
-    if (!apiSecret.startsWith("sk_")) {
-      throw new AgentRPCError(`Invalid API Secret.`);
-    }
+    const [prefix, clusterId, rand] = apiSecret.split("_");
 
-    this.apiSecret = apiSecret;
+    if (prefix !== "sk" || !clusterId || !rand) {
+      throw new AgentRPCError(`Invalid API Secret.`);
+    } else {
+      this.apiSecret = apiSecret;
+      this.clusterId = clusterId;
+    }
 
     this.endpoint = options?.endpoint || "https://api.agentrpc.com";
 
@@ -102,7 +105,7 @@ export class AgentRPC {
 
   public OpenAI = {
     getTools: async (): Promise<OpenAI.ChatCompletionTool[]> => {
-      const clusterId = this.clusterId ?? (await this.getClusterId());
+      const clusterId = this.clusterId;
 
       const toolResponse = await this.client.listTools({
         params: { clusterId },
@@ -126,7 +129,7 @@ export class AgentRPC {
       return tools;
     },
     executeTool: async (toolCall: OpenAI.ChatCompletionMessageToolCall) => {
-      const clusterId = this.clusterId ?? (await this.getClusterId());
+      const clusterId = this.clusterId;
 
       const tools = await this.OpenAI.getTools();
       const tool = tools.find(
@@ -198,7 +201,7 @@ export class AgentRPC {
       endpoint: this.endpoint,
       machineId: this.machineId,
       apiSecret: this.apiSecret,
-      clusterId: await this.getClusterId(),
+      clusterId: this.clusterId,
       tools: Object.values(this.toolsRegistry),
     });
 
@@ -210,13 +213,7 @@ export class AgentRPC {
     Promise.all(this.pollingAgents.map((agent) => agent.stop()));
   }
 
-  private async getClusterId() {
-    if (!this.clusterId) {
-      // Call register machine without any services to test API key and get clusterId
-      const registerResult = await registerMachine(this.client);
-      this.clusterId = registerResult.clusterId;
-    }
-
+  public getClusterId() {
     return this.clusterId;
   }
 }
