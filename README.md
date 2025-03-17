@@ -6,8 +6,8 @@ AgentRPC is a universal RPC layer for AI agents. It allows you to connect to any
 
 You might have services deployed in a private VPC, on Kubernetes, even across multiple clouds. AgentRPC gives you the tools to wrap your functions in a universal RPC interface, connecting them to a hosted RPC server that can be accessed from open standards like:
 
-Model Context Protocol (MCP)
-SDKs with OpenAI-compatible tool definitions (e.g. OpenAI, Anthropic, LiteLLM, OpenRouter, etc.)
+- Model Context Protocol (MCP)
+- SDKs with OpenAI-compatible tool definitions (e.g. OpenAI, Anthropic, LiteLLM, OpenRouter, etc.)
 
 ## How it works
 1. By using our tool registration SDK, you can register functions and APIs in any language.
@@ -19,7 +19,7 @@ SDKs with OpenAI-compatible tool definitions (e.g. OpenAI, Anthropic, LiteLLM, O
 ## Features
 
 - **Multi-language Support**  
-  Connect Agents to tools in multiple languages including TypeScript, Go, and Python (.NET coming soon).  
+  Connect Agents to tools in multiple languages including TypeScript an Go. (Python and .NET coming soon).  
 
 - **Private Network Support**  
   Register functions and APIs even in private VPCs with no open ports required.  
@@ -47,3 +47,60 @@ Details for each SDK are located in their respective directories.
 [Get your API key](https://app.agentrpc.com)
 
 Check out our [examples](./examples) directory for working code samples in each language.
+
+
+## MCP Usage
+
+The AgentRPC TypeScript SDK includes an MCP (Model Context Protocol) server that can be started using:
+
+```sh
+ANGENTRPC_API_SECRET=YOUR_API_SECRET npx agentrpc mcp
+```
+
+This will launch an MCP-compliant server, allowing external AI models and applications to interact with your registered tools.
+
+For more details on MCP, visit [Model Context Protocol](https://modelcontextprotocol.io/introduction).
+
+### Claude Desktop Usage:
+
+Add the following to your `claude_desktop_config.json`:
+
+```
+{
+  "mcpServers": {
+    "agentrpc": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "agentrpc",
+        "mcp"
+      ],
+      "env": {
+        "AGENTRPC_API_SECRET": "<YOUR_API_SECRET>"
+      }
+    }
+  }
+}
+```
+
+[More Info](https://modelcontextprotocol.io/quickstart/user)
+
+### Cursor
+
+Add the following to your `~/.cursor/mcp.json`:
+
+```
+{
+  "mcpServers": {
+    "agentrpc": {
+      "command": "npx",
+      "args": ["-y", "agentrpc", "mcp"],
+      "env": {
+        "AGENTRPC_API_SECRET": "<YOUR_API_SECRET>"
+      }
+    }
+  }
+}
+```
+
+[More Info](https://docs.cursor.com/context/model-context-protocol#configuring-mcp-servers)
