@@ -29,7 +29,7 @@ func reverse(input ReverseInput) string {
 func TestInferableFunctions(t *testing.T) {
 	machineSecret, _, _, apiEndpoint := util.GetTestVars()
 
-	inferableInstance, err := New(AgentRPCOptions{
+	inferableInstance, err := New(Options{
 		APIEndpoint: apiEndpoint,
 		APISecret:   machineSecret,
 	})
@@ -111,7 +111,7 @@ func TestInferableFunctions(t *testing.T) {
 	t.Run("Machine ID Consistency", func(t *testing.T) {
 		machineSecret, _, _, apiEndpoint := util.GetTestVars()
 
-		instance1, err := New(AgentRPCOptions{
+		instance1, err := New(Options{
 			APIEndpoint: apiEndpoint,
 			APISecret:   machineSecret,
 		})
@@ -120,7 +120,7 @@ func TestInferableFunctions(t *testing.T) {
 		}
 		id1 := instance1.machineID
 
-		instance2, err := New(AgentRPCOptions{
+		instance2, err := New(Options{
 			APIEndpoint: apiEndpoint,
 			APISecret:   machineSecret,
 		})

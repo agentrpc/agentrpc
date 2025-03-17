@@ -17,11 +17,11 @@ go get github.com/agentrpc/go-sdk
 package main
 
 import (
-	"github.com/agentrpc/go-sdk"
+	"github.com/agentrpc/agentrpc/sdk-go"
 )
 
 func main() {
-	client := agentrpc.New(agentrpc.AgentRPCOptions{
+	client := agentrpc.New(agentrpc.Options{
 		APISecret: "YOUR_API_SECRET",
 	})
 }
@@ -30,15 +30,8 @@ func main() {
 ### Registering a Tool
 
 ```go
-package main
-
-import (
-	"context"
-	"github.com/agentrpc/go-sdk"
-)
-
 func main() {
-	client := agentrpc.New(AgentRPCOptions{
+	client := agentrpc.New(Options{
 		APISecret: "YOUR_API_SECRET",
 	})
 

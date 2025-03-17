@@ -10,7 +10,7 @@ import (
 )
 
 func TestNew(t *testing.T) {
-	i, err := New(AgentRPCOptions{
+	i, err := New(Options{
 		APIEndpoint: DefaultAPIEndpoint,
 		APISecret:   "sk_secret_123",
 	})
@@ -22,7 +22,7 @@ func TestNew(t *testing.T) {
 }
 
 func TestCallFunc(t *testing.T) {
-	i, _ := New(AgentRPCOptions{
+	i, _ := New(Options{
 		APIEndpoint: DefaultAPIEndpoint,
 		APISecret:   "sk_secret_123",
 	})
@@ -59,7 +59,7 @@ func TestServerOk(t *testing.T) {
 	}))
 	defer server.Close()
 
-	i, _ := New(AgentRPCOptions{
+	i, _ := New(Options{
 		APIEndpoint: server.URL,
 		APISecret:   "sk_secret_123",
 	})
@@ -68,7 +68,7 @@ func TestServerOk(t *testing.T) {
 }
 
 func TestGetMachineID(t *testing.T) {
-	i, _ := New(AgentRPCOptions{
+	i, _ := New(Options{
 		APIEndpoint: DefaultAPIEndpoint,
 		APISecret:   "sk_secret_123",
 	})
@@ -76,7 +76,7 @@ func TestGetMachineID(t *testing.T) {
 	assert.NotEmpty(t, machineID)
 
 	// Check if the machine ID is persistent
-	i2, _ := New(AgentRPCOptions{
+	i2, _ := New(Options{
 		APIEndpoint: DefaultAPIEndpoint,
 		APISecret:   "sk_secret_123",
 	})

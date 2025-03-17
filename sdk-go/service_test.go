@@ -17,7 +17,7 @@ import (
 func TestRegisterFunc(t *testing.T) {
 	_, _, _, apiEndpoint := util.GetTestVars()
 
-	i, _ := New(AgentRPCOptions{
+	i, _ := New(Options{
 		APIEndpoint: apiEndpoint,
 		APISecret:   "sk_secret_123",
 	})
@@ -53,7 +53,7 @@ func TestRegisterFunc(t *testing.T) {
 func TestRegisterFuncWithInlineStruct(t *testing.T) {
 	_, _, _, apiEndpoint := util.GetTestVars()
 
-	i, _ := New(AgentRPCOptions{
+	i, _ := New(Options{
 		APIEndpoint: apiEndpoint,
 		APISecret:   "sk_secret_123",
 	})
@@ -92,7 +92,7 @@ func TestRegistrationAndConfig(t *testing.T) {
 	machineID := "random-machine-id"
 
 	// Create a new Inferable instance
-	i, err := New(AgentRPCOptions{
+	i, err := New(Options{
 		APIEndpoint: apiEndpoint,
 		APISecret:   machineSecret,
 		MachineID:   machineID,
@@ -134,7 +134,7 @@ func TestServiceStartAndReceiveMessage(t *testing.T) {
 	machineID := "random-machine-id"
 
 	// Create a new Inferable instance
-	i, err := New(AgentRPCOptions{
+	i, err := New(Options{
 		APIEndpoint: apiEndpoint,
 		APISecret:   machineSecret,
 		MachineID:   machineID,
@@ -209,7 +209,7 @@ func TestServiceStartAndReceiveFailingMessage(t *testing.T) {
 	machineID := "random-machine-id"
 
 	// Create a new Inferable instance
-	i, err := New(AgentRPCOptions{
+	i, err := New(Options{
 		APIEndpoint: apiEndpoint,
 		APISecret:   machineSecret,
 		MachineID:   machineID,

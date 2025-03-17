@@ -13,7 +13,7 @@ import (
 )
 
 // Version of the AgentRPC package
-const Version = "0.0.4"
+const Version = "0.0.5"
 
 const (
 	// DefaultAPIEndpoint is the default endpoint for the AgentRPC API.
@@ -30,7 +30,7 @@ type AgentRPC struct {
 	tools       *pollingAgent
 }
 
-type AgentRPCOptions struct {
+type Options struct {
 	APIEndpoint string
 	APISecret   string
 	MachineID   string
@@ -47,7 +47,7 @@ type AgentRPCOptions struct {
 //	client := inferable.New(AgentRPCOptions{
 //	    ApiSecret: "API_SECRET",
 //	})
-func New(options AgentRPCOptions) (*AgentRPC, error) {
+func New(options Options) (*AgentRPC, error) {
 	if options.APIEndpoint == "" {
 		options.APIEndpoint = DefaultAPIEndpoint
 	}
