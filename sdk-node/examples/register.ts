@@ -1,7 +1,7 @@
 import { AgentRPC } from "../src";
 import { z } from "zod";
 
-const client = new AgentRPC({
+const rpc = new AgentRPC({
   apiSecret: process.env.AGENTRPC_API_SECRET!,
 });
 

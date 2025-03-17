@@ -21,7 +21,7 @@ export const log = debug("agentrpc:client");
  *
  * ```ts
  * // create a new AngentRPC instance
- * const client = new AgentRPC({
+ * const rpc = new AgentRPC({
  *  apiSecret: "API_SECRET",
  * });
  *
@@ -67,7 +67,7 @@ export class AgentRPC {
    * @example
    * ```ts
    * // Basic usage
-   * const client = new AgentRPC({
+   * const rpc = new AgentRPC({
    *  apiSecret: "API_SECRET",
    * });
    * ```

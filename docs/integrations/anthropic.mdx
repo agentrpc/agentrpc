@@ -18,7 +18,7 @@ const openai = new OpenAI({
 });
 
 // Get tools formatted for OpenAI (these will work with Anthropic)
-const tools = await client.OpenAI.getTools();
+const tools = await rpc.OpenAI.getTools();
 
 // Use with Anthropic via OpenAI SDK
 const chatCompletion = await openai.chat.completions.create({
@@ -32,7 +32,7 @@ const chatCompletion = await openai.chat.completions.create({
 // Execute tool calls just like with OpenAI
 if (responseMessage.tool_calls && responseMessage.tool_calls.length > 0) {
   for (const toolCall of responseMessage.tool_calls) {
-    const result = await client.OpenAI.executeTool(toolCall);
+    const result = await rpc.OpenAI.executeTool(toolCall);
     // Use the result...
   }
 }

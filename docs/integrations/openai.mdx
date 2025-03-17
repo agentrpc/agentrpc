@@ -4,13 +4,13 @@ description: 'Connect OpenAI models to your AgentRPC tools'
 icon: 'circle'
 ---
 
-You can use the `client.OpenAI` object to get tools formatted for the OpenAI SDK.
+You can use the `rpc.OpenAI` object to get tools formatted for the OpenAI SDK.
 
 ## TypeScript/JavaScript
 
 ```typescript
 // Get tools formatted for OpenAI
-const tools = await client.OpenAI.getTools();
+const tools = await rpc.OpenAI.getTools();
 
 // Pass these tools to OpenAI
 const chatCompletion = await openai.chat.completions.create({
@@ -23,7 +23,7 @@ const chatCompletion = await openai.chat.completions.create({
 // Execute tool calls from OpenAI's response
 if (responseMessage.tool_calls && responseMessage.tool_calls.length > 0) {
   for (const toolCall of responseMessage.tool_calls) {
-    const result = await client.OpenAI.executeTool(toolCall);
+    const result = await rpc.OpenAI.executeTool(toolCall);
     // Use the result...
   }
 }
@@ -36,10 +36,10 @@ from agentrpc import AgentRPC
 from openai import OpenAI
 
 openai = OpenAI(api_key="YOUR_OPENAI_API_KEY")
-agentrpc = AgentRPC(api_secret="YOUR_API_SECRET")
+rpc = AgentRPC(api_secret="YOUR_API_SECRET")
 
 # Get tools formatted for OpenAI
-tools = agentrpc.openai.get_tools()
+tools = rpc.openai.get_tools()
 
 # Use tools with OpenAI
 completion = openai.chat.completions.create(
@@ -51,6 +51,6 @@ completion = openai.chat.completions.create(
 # Execute tool calls
 if completion.choices[0].message.tool_calls:
     for tool_call in completion.choices[0].message.tool_calls:
-        result = agentrpc.openai.execute_tool(tool_call)
+        result = rpc.openai.execute_tool(tool_call)
         # Use the result...
 ``` 
