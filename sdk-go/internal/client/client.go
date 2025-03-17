@@ -15,11 +15,12 @@ type Client struct {
 }
 
 type ClientOptions struct {
-	Endpoint string
-	Secret   string
+	Endpoint  string
+	Secret    string
+	ClusterId string
 }
 
-// NewClient creates a new Inferable API client
+// NewClient creates a new Agent API client
 func NewClient(options ClientOptions) (*Client, error) {
 	if !strings.HasPrefix(options.Endpoint, "http://") && !strings.HasPrefix(options.Endpoint, "https://") {
 		return nil, fmt.Errorf("invalid URL: %s", options.Endpoint)

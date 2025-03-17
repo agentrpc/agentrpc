@@ -10,20 +10,21 @@ import (
 )
 
 func TestNew(t *testing.T) {
-	i, err := New(InferableOptions{
+	i, err := New(AgentRPCOptions{
 		APIEndpoint: DefaultAPIEndpoint,
-		APISecret:   "test-secret",
+		APISecret:   "sk_secret_123",
 	})
 	require.NoError(t, err)
 	assert.Equal(t, DefaultAPIEndpoint, i.apiEndpoint)
-	assert.Equal(t, "test-secret", i.apiSecret)
+	assert.Equal(t, "sk_secret_123", i.apiSecret)
+	assert.Equal(t, "secret", i.clusterID)
 	assert.NotEmpty(t, i.machineID)
 }
 
 func TestCallFunc(t *testing.T) {
-	i, _ := New(InferableOptions{
+	i, _ := New(AgentRPCOptions{
 		APIEndpoint: DefaultAPIEndpoint,
-		APISecret:   "test-secret",
+		APISecret:   "sk_secret_123",
 	})
 
 	type TestInput struct {
@@ -31,15 +32,15 @@ func TestCallFunc(t *testing.T) {
 		B int `json:"b"`
 	}
 
-	testFunc := func(input TestInput, ctx ContextInput) int { return input.A + input.B }
-	err := i.Tools.Register(Tool{
-		Func: testFunc,
-		Name: "TestFunc",
+	testFunc := func(input TestInput) int { return input.A + input.B }
+	err := i.Register(Tool{
+		Handler: testFunc,
+		Name:    "TestCallFunc",
 	})
 
 	assert.NoError(t, err)
 
-	result, err := i.callFunc("TestFunc", TestInput{A: 2, B: 3}, ContextInput{})
+	result, err := i.callFunc("TestCallFunc", TestInput{A: 2, B: 3})
 	require.NoError(t, err)
 	assert.Equal(t, 5, result[0].Interface())
 
@@ -58,26 +59,26 @@ func TestServerOk(t *testing.T) {
 	}))
 	defer server.Close()
 
-	i, _ := New(InferableOptions{
+	i, _ := New(AgentRPCOptions{
 		APIEndpoint: server.URL,
-		APISecret:   "test-secret",
+		APISecret:   "sk_secret_123",
 	})
 	err := i.serverOk()
 	assert.NoError(t, err)
 }
 
 func TestGetMachineID(t *testing.T) {
-	i, _ := New(InferableOptions{
+	i, _ := New(AgentRPCOptions{
 		APIEndpoint: DefaultAPIEndpoint,
-		APISecret:   "test-secret",
+		APISecret:   "sk_secret_123",
 	})
 	machineID := i.machineID
 	assert.NotEmpty(t, machineID)
 
 	// Check if the machine ID is persistent
-	i2, _ := New(InferableOptions{
+	i2, _ := New(AgentRPCOptions{
 		APIEndpoint: DefaultAPIEndpoint,
-		APISecret:   "test-secret",
+		APISecret:   "sk_secret_123",
 	})
 	assert.Equal(t, machineID, i2.machineID)
 }

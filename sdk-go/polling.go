@@ -25,30 +25,21 @@ type Tool struct {
 	Description string
 	schema      interface{}
 	Config      interface{}
-	Func        interface{}
-}
-
-type ContextInput struct {
-	AuthContext interface{} `json:"authContext,omitempty"`
-	RunContext  interface{} `json:"runContext,omitempty"`
-	Approved    bool        `json:"approved"`
+	Handler     interface{}
 }
 
 type pollingAgent struct {
 	Tools      map[string]Tool
-	inferable  *Inferable
+	inferable  *AgentRPC
 	ctx        context.Context
 	cancel     context.CancelFunc
 	retryAfter int
 }
 
 type callMessage struct {
-	Id          string      `json:"id"`
-	Function    string      `json:"function"`
-	Input       interface{} `json:"input"`
-	AuthContext interface{} `json:"authContext,omitempty"`
-	RunContext  interface{} `json:"runContext,omitempty"`
-	Approved    bool        `json:"approved"`
+	Id       string      `json:"id"`
+	Function string      `json:"function"`
+	Input    interface{} `json:"input"`
 }
 
 type callResultMeta struct {
@@ -61,33 +52,6 @@ type callResult struct {
 	Meta       callResultMeta `json:"meta"`
 }
 
-// Registers a Tool against
-//
-// Parameters:
-// - input: The Tool definition.
-//
-// Example:
-//
-//	// Create a new Inferable instance with an API secret
-//	client := inferable.New(InferableOptions{
-//	    ApiSecret: "API_SECRET",
-//	})
-//
-//
-//	sayHello, err := client.Tools.Register(Tool{
-//	  Func:        func(input EchoInput) string {
-//	    didCallSayHello = true
-//	    return "Hello " + input.Input
-//	  },
-//	  Name:        "SayHello",
-//	  Description: "A simple greeting function",
-//	})
-//
-//	// Start the service
-//	service.Start()
-//
-//	// Stop the service on shutdown
-//	defer service.Stop()
 func (s *pollingAgent) Register(fn Tool) error {
 	if s.isPolling() {
 		return fmt.Errorf("tool must be registered before starting the service")
@@ -98,16 +62,11 @@ func (s *pollingAgent) Register(fn Tool) error {
 	}
 
 	// Validate that the function has exactly one argument and it's a struct
-	fnType := reflect.TypeOf(fn.Func)
-	if fnType.NumIn() != 2 {
-		return fmt.Errorf("tool '%s' must have exactly two arguments", fn.Name)
+	fnType := reflect.TypeOf(fn.Handler)
+	if fnType.NumIn() != 1 {
+		return fmt.Errorf("tool '%s' must have exactly one argument", fn.Name)
 	}
 	arg1Type := fnType.In(0)
-	arg2Type := fnType.In(1)
-
-	if arg2Type.Kind() != reflect.Struct {
-		return fmt.Errorf("tool '%s' second argument must be a struct (ContextInput)", fn.Name)
-	}
 
 	// Set the argument type to the referenced type
 	if arg1Type.Kind() == reflect.Ptr {
@@ -207,11 +166,6 @@ func (s *pollingAgent) poll() error {
 		"X-Machine-SDK-Language": "go",
 	}
 
-	clusterId, err := s.inferable.getClusterId()
-	if err != nil {
-		return fmt.Errorf("failed to get cluster id: %v", err)
-	}
-
 	// Build comma-seperated tools list
 	toolList := ""
 	for _, tool := range s.Tools {
@@ -222,7 +176,7 @@ func (s *pollingAgent) poll() error {
 	}
 
 	options := client.FetchDataOptions{
-		Path:    fmt.Sprintf("/clusters/%s/jobs?acknowledge=true&tools=%s&status=pending&limit=10&waitTime=20", clusterId, toolList),
+		Path:    fmt.Sprintf("/clusters/%s/jobs?acknowledge=true&tools=%s&status=pending&limit=10&waitTime=20", s.inferable.clusterID, toolList),
 		Method:  "GET",
 		Headers: headers,
 	}
@@ -276,7 +230,7 @@ func (s *pollingAgent) handleMessage(msg callMessage) error {
 	}
 
 	// Create a new instance of the function's input type
-	fnType := reflect.TypeOf(fn.Func)
+	fnType := reflect.TypeOf(fn.Handler)
 	argType := fnType.In(0)
 	argPtr := reflect.New(argType)
 
@@ -307,16 +261,10 @@ func (s *pollingAgent) handleMessage(msg callMessage) error {
 		}
 	}
 
-	context := ContextInput{
-		AuthContext: msg.AuthContext,
-		RunContext:  msg.RunContext,
-		Approved:    msg.Approved,
-	}
-
 	start := time.Now()
 	// Call the function with the unmarshaled argument
-	fnValue := reflect.ValueOf(fn.Func)
-	returnValues := fnValue.Call([]reflect.Value{argPtr.Elem(), reflect.ValueOf(context)})
+	fnValue := reflect.ValueOf(fn.Handler)
+	returnValues := fnValue.Call([]reflect.Value{argPtr.Elem()})
 
 	resultType := "resolution"
 	resultValue := returnValues[0].Interface()
@@ -375,13 +323,8 @@ func (s *pollingAgent) persistJobResult(jobID string, result callResult) error {
 		"X-Machine-SDK-Language": "go",
 	}
 
-	clusterId, err := s.inferable.getClusterId()
-	if err != nil {
-		return fmt.Errorf("failed to get cluster id: %v", err)
-	}
-
 	options := client.FetchDataOptions{
-		Path:    fmt.Sprintf("/clusters/%s/jobs/%s/result", clusterId, jobID),
+		Path:    fmt.Sprintf("/clusters/%s/jobs/%s/result", s.inferable.clusterID, jobID),
 		Method:  "POST",
 		Headers: headers,
 		Body:    string(payloadJSON),

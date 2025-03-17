@@ -17,35 +17,35 @@ import (
 func TestRegisterFunc(t *testing.T) {
 	_, _, _, apiEndpoint := util.GetTestVars()
 
-	i, _ := New(InferableOptions{
+	i, _ := New(AgentRPCOptions{
 		APIEndpoint: apiEndpoint,
-		APISecret:   "test-secret",
+		APISecret:   "sk_secret_123",
 	})
 	type TestInput struct {
 		A int `json:"a"`
 		B int `json:"b"`
 	}
 
-	testFunc := func(input TestInput, ctx ContextInput) int { return input.A + input.B }
-	err := i.Tools.Register(Tool{
-		Func:        testFunc,
+	testFunc := func(input TestInput) int { return input.A + input.B }
+	err := i.Register(Tool{
+		Handler:     testFunc,
 		Name:        "TestFunc",
 		Description: "Test function",
 	})
 	require.NoError(t, err)
 
 	// Try to register the same function again
-	err = i.Tools.Register(Tool{
-		Func: testFunc,
-		Name: "TestFunc",
+	err = i.Register(Tool{
+		Handler: testFunc,
+		Name:    "TestFunc",
 	})
 	assert.Error(t, err)
 
 	// Try to register a function with invalid input
 	invalidFunc := func(a, b int) int { return a + b }
-	err = i.Tools.Register(Tool{
-		Func: invalidFunc,
-		Name: "InvalidFunc",
+	err = i.Register(Tool{
+		Handler: invalidFunc,
+		Name:    "InvalidFunc",
 	})
 	assert.Error(t, err)
 }
@@ -53,35 +53,35 @@ func TestRegisterFunc(t *testing.T) {
 func TestRegisterFuncWithInlineStruct(t *testing.T) {
 	_, _, _, apiEndpoint := util.GetTestVars()
 
-	i, _ := New(InferableOptions{
+	i, _ := New(AgentRPCOptions{
 		APIEndpoint: apiEndpoint,
-		APISecret:   "test-secret",
+		APISecret:   "sk_secret_123",
 	})
 	testFunc := func(input struct {
 		A int `json:"a"`
 		B int `json:"b"`
-	}, ctx ContextInput) int {
+	}) int {
 		return input.A + input.B
 	}
-	err := i.Tools.Register(Tool{
-		Func:        testFunc,
+	err := i.Register(Tool{
+		Handler:     testFunc,
 		Name:        "TestFunc",
 		Description: "Test function",
 	})
 	require.NoError(t, err)
 
 	// Try to register the same function again
-	err = i.Tools.Register(Tool{
-		Func: testFunc,
-		Name: "TestFunc",
+	err = i.Register(Tool{
+		Handler: testFunc,
+		Name:    "TestFunc",
 	})
 	assert.Error(t, err)
 
 	// Try to register a function with invalid input
 	invalidFunc := func(a, b int) int { return a + b }
-	err = i.Tools.Register(Tool{
-		Func: invalidFunc,
-		Name: "InvalidFunc",
+	err = i.Register(Tool{
+		Handler: invalidFunc,
+		Name:    "InvalidFunc",
 	})
 	assert.Error(t, err)
 }
@@ -92,7 +92,7 @@ func TestRegistrationAndConfig(t *testing.T) {
 	machineID := "random-machine-id"
 
 	// Create a new Inferable instance
-	i, err := New(InferableOptions{
+	i, err := New(AgentRPCOptions{
 		APIEndpoint: apiEndpoint,
 		APISecret:   machineSecret,
 		MachineID:   machineID,
@@ -113,10 +113,10 @@ func TestRegistrationAndConfig(t *testing.T) {
 		} `json:"c"`
 	}
 
-	testFunc := func(input TestInput, ctx ContextInput) int { return input.A + input.B }
+	testFunc := func(input TestInput) int { return input.A + input.B }
 
-	err = i.Tools.Register(Tool{
-		Func:        testFunc,
+	err = i.Register(Tool{
+		Handler:     testFunc,
 		Name:        "TestFunc",
 		Description: "Test function",
 	})
@@ -124,7 +124,7 @@ func TestRegistrationAndConfig(t *testing.T) {
 	require.NoError(t, err)
 
 	// Call Listen to trigger registration
-	err = i.Tools.Listen()
+	err = i.Listen()
 	require.NoError(t, err)
 }
 
@@ -134,7 +134,7 @@ func TestServiceStartAndReceiveMessage(t *testing.T) {
 	machineID := "random-machine-id"
 
 	// Create a new Inferable instance
-	i, err := New(InferableOptions{
+	i, err := New(AgentRPCOptions{
 		APIEndpoint: apiEndpoint,
 		APISecret:   machineSecret,
 		MachineID:   machineID,
@@ -146,21 +146,21 @@ func TestServiceStartAndReceiveMessage(t *testing.T) {
 		Message string `json:"message"`
 	}
 
-	testFunc := func(input TestInput, ctx ContextInput) string { return "Received: " + input.Message }
+	testFunc := func(input TestInput) string { return "Received: " + input.Message }
 
-	err = i.Tools.Register(Tool{
-		Func:        testFunc,
+	err = i.Register(Tool{
+		Handler:     testFunc,
 		Name:        "TestFunc",
 		Description: "Test function",
 	})
 	require.NoError(t, err)
 
 	// Start the service
-	err = i.Tools.Listen()
+	err = i.Listen()
 	require.NoError(t, err)
 
 	// Ensure the service is stopped at the end of the test
-	defer i.Tools.Unlisten()
+	defer i.Unlisten()
 
 	// Use executeJobSync to invoke the function
 	testMessage := "Hello, SQS!"
@@ -193,9 +193,13 @@ func TestServiceStartAndReceiveMessage(t *testing.T) {
 	err = json.NewDecoder(resp.Body).Decode(&result)
 	require.NoError(t, err)
 
+	// Print the response body for debugging
+	resultBody, err := json.MarshalIndent(result, "", "    ")
+	require.NoError(t, err)
+	t.Logf("Response body: %s", string(resultBody))
 	// Check if the job was executed successfully
 	require.Equal(t, "resolution", result["resultType"])
-	require.Equal(t, "success", result["status"])
+	require.Equal(t, "done", result["status"])
 	require.Equal(t, "Received: Hello, SQS!", result["result"])
 }
 
@@ -205,7 +209,7 @@ func TestServiceStartAndReceiveFailingMessage(t *testing.T) {
 	machineID := "random-machine-id"
 
 	// Create a new Inferable instance
-	i, err := New(InferableOptions{
+	i, err := New(AgentRPCOptions{
 		APIEndpoint: apiEndpoint,
 		APISecret:   machineSecret,
 		MachineID:   machineID,
@@ -218,21 +222,21 @@ func TestServiceStartAndReceiveFailingMessage(t *testing.T) {
 	}
 
 	// Purposfuly failing function
-	testFailingFunc := func(input TestInput, ctx ContextInput) (*string, error) { return nil, fmt.Errorf("test error") }
+	testFailingFunc := func(input TestInput) (*string, error) { return nil, fmt.Errorf("test error") }
 
-	err = i.Tools.Register(Tool{
-		Func:        testFailingFunc,
+	err = i.Register(Tool{
+		Handler:     testFailingFunc,
 		Name:        "FailingFunc",
 		Description: "Test function",
 	})
 	require.NoError(t, err)
 
 	// Start the service
-	err = i.Tools.Listen()
+	err = i.Listen()
 	require.NoError(t, err)
 
 	// Ensure the service is stopped at the end of the test
-	defer i.Tools.Unlisten()
+	defer i.Unlisten()
 
 	// Use executeJobSync to invoke the function
 	testMessage := "Hello, SQS!"
@@ -267,6 +271,6 @@ func TestServiceStartAndReceiveFailingMessage(t *testing.T) {
 
 	// Check if the job was executed successfully
 	require.Equal(t, "rejection", result["resultType"])
-	require.Equal(t, "success", result["status"])
+	require.Equal(t, "done", result["status"])
 	require.Equal(t, "test error", result["result"])
 }

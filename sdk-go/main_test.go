@@ -10,7 +10,7 @@ type EchoInput struct {
 	Input string
 }
 
-func echo(input EchoInput, ctx ContextInput) string {
+func echo(input EchoInput) string {
 	return input.Input
 }
 
@@ -18,7 +18,7 @@ type ReverseInput struct {
 	Input string
 }
 
-func reverse(input ReverseInput, ctx ContextInput) string {
+func reverse(input ReverseInput) string {
 	runes := []rune(input.Input)
 	for i, j := 0, len(runes)-1; i < j; i, j = i+1, j-1 {
 		runes[i], runes[j] = runes[j], runes[i]
@@ -29,7 +29,7 @@ func reverse(input ReverseInput, ctx ContextInput) string {
 func TestInferableFunctions(t *testing.T) {
 	machineSecret, _, _, apiEndpoint := util.GetTestVars()
 
-	inferableInstance, err := New(InferableOptions{
+	inferableInstance, err := New(AgentRPCOptions{
 		APIEndpoint: apiEndpoint,
 		APISecret:   machineSecret,
 	})
@@ -37,8 +37,8 @@ func TestInferableFunctions(t *testing.T) {
 		t.Fatalf("Error creating Inferable instance: %v", err)
 	}
 
-	err = inferableInstance.Tools.Register(Tool{
-		Func:        echo,
+	err = inferableInstance.Register(Tool{
+		Handler:     echo,
 		Description: "Echoes the input string",
 		Name:        "echo",
 	})
@@ -46,8 +46,8 @@ func TestInferableFunctions(t *testing.T) {
 		t.Fatalf("Error registering echo function: %v", err)
 	}
 
-	err = inferableInstance.Tools.Register(Tool{
-		Func:        reverse,
+	err = inferableInstance.Register(Tool{
+		Handler:     reverse,
 		Description: "Reverses the input string",
 		Name:        "reverse",
 	})
@@ -60,7 +60,7 @@ func TestInferableFunctions(t *testing.T) {
 	}
 	t.Run("Echo Function", func(t *testing.T) {
 		testInput := EchoInput{Input: "Hello, Inferable!"}
-		result, err := inferableInstance.callFunc("echo", testInput, ContextInput{})
+		result, err := inferableInstance.callFunc("echo", testInput)
 		if err != nil {
 			t.Fatalf("Error calling echo function: %v", err)
 		}
@@ -77,7 +77,7 @@ func TestInferableFunctions(t *testing.T) {
 
 	t.Run("Reverse Function", func(t *testing.T) {
 		testInput := ReverseInput{Input: "Hello, Inferable!"}
-		result, err := inferableInstance.callFunc("reverse", testInput, ContextInput{})
+		result, err := inferableInstance.callFunc("reverse", testInput)
 		if err != nil {
 			t.Fatalf("Error calling reverse function: %v", err)
 		}
@@ -111,7 +111,7 @@ func TestInferableFunctions(t *testing.T) {
 	t.Run("Machine ID Consistency", func(t *testing.T) {
 		machineSecret, _, _, apiEndpoint := util.GetTestVars()
 
-		instance1, err := New(InferableOptions{
+		instance1, err := New(AgentRPCOptions{
 			APIEndpoint: apiEndpoint,
 			APISecret:   machineSecret,
 		})
@@ -120,7 +120,7 @@ func TestInferableFunctions(t *testing.T) {
 		}
 		id1 := instance1.machineID
 
-		instance2, err := New(InferableOptions{
+		instance2, err := New(AgentRPCOptions{
 			APIEndpoint: apiEndpoint,
 			APISecret:   machineSecret,
 		})

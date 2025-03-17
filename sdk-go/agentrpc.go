@@ -6,91 +6,50 @@ import (
 	"fmt"
 	"net/http"
 	"reflect"
+	"strings"
 
 	"github.com/inferablehq/inferable/sdk-go/internal/client"
 	"github.com/inferablehq/inferable/sdk-go/internal/util"
 )
 
-// Version of the inferable package
-const Version = "0.1.44"
+// Version of the AgentRPC package
+const Version = "0.0.4"
 
 const (
-	// DefaultAPIEndpoint is the default endpoint for the Inferable API.
+	// DefaultAPIEndpoint is the default endpoint for the AgentRPC API.
 	DefaultAPIEndpoint = "https://api.agentrpc.com"
 )
 
-// Inferable is the main client for interacting with the Inferable platform.
-// It provides access to tools, workflows, and other Inferable services.
-// Use the New function to create a new instance of Inferable.
-type Inferable struct {
+// AgentRPC is the main client for interacting with the AgentRPC platform.
+type AgentRPC struct {
 	client      *client.Client
 	apiEndpoint string
 	apiSecret   string
 	machineID   string
 	clusterID   string
-	// Tools provides access to tool registration and management.
-	Tools *pollingAgent
-	// Workflows provides access to workflow creation and management.
-	Workflows *Workflows
-	// Convenience reference to a service with the name 'default'.
-	//
-	// Returns:
-	// A registered service instance.
-	//
-	// Example:
-	//
-	//  // Create a new Inferable instance with an API secret
-	//  client := inferable.New(InferableOptions{
-	//      ApiSecret: "API_SECRET",
-	//  })
-	//
-	//  client.Tools.Register(Function{
-	//    Func:        func(input EchoInput) string {
-	//      didCallSayHello = true
-	//      return "Hello " + input.Input
-	//    },
-	//    Name:        "SayHello",
-	//    Description: "A simple greeting function",
-	//  })
-	//
-	//  // Start the service
-	//  client.Tools.Listen()
-	//
-	//  // Stop the service on shutdown
-	//  defer client.Default.Stop()
+	tools       *pollingAgent
 }
 
-type InferableOptions struct {
+type AgentRPCOptions struct {
 	APIEndpoint string
 	APISecret   string
 	MachineID   string
 }
 
-// Input object for onStatusChange functions
-// https://docs.inferable.ai/pages/runs#onstatuschange
-type OnStatusChangeInput struct {
-	Status string      `json:"status"`
-	RunId  string      `json:"runId"`
-	Result interface{} `json:"result"`
-	Tags   interface{} `json:"tags"`
-}
-
-// Input object for handleCustomAuth functions
-// https://docs.inferable.ai/pages/custom-auth
-type HandleCustomAuthInput struct {
-	Token string `json:"token"`
-}
-
-func New(options InferableOptions) (*Inferable, error) {
+// Initializes a new AgentRPC client.
+//
+// Parameters:
+// 0 - options: The options for the AgentRPC client.
+//
+// Example:
+//
+//	// Create a new AgentRPC instance with an API secret
+//	client := inferable.New(AgentRPCOptions{
+//	    ApiSecret: "API_SECRET",
+//	})
+func New(options AgentRPCOptions) (*AgentRPC, error) {
 	if options.APIEndpoint == "" {
 		options.APIEndpoint = DefaultAPIEndpoint
-	}
-	client, err := client.NewClient(client.ClientOptions{
-		Endpoint: options.APIEndpoint,
-		Secret:   options.APISecret,
-	})
-	if err != nil {
-		return nil, fmt.Errorf("error creating client: %v", err)
 	}
 
 	machineID := options.MachineID
@@ -98,28 +57,73 @@ func New(options InferableOptions) (*Inferable, error) {
 		machineID = util.GenerateMachineID(8)
 	}
 
-	inferable := &Inferable{
+	parts := strings.Split(options.APISecret, "_")
+	if len(parts) != 3 || parts[0] != "sk" {
+		return nil, fmt.Errorf("invalid API secret")
+	}
+
+	client, err := client.NewClient(client.ClientOptions{
+		Endpoint: options.APIEndpoint,
+		Secret:   options.APISecret,
+	})
+
+	if err != nil {
+		return nil, fmt.Errorf("error creating client: %v", err)
+	}
+
+	rpc := &AgentRPC{
 		client:      client,
 		apiEndpoint: options.APIEndpoint,
 		apiSecret:   options.APISecret,
+		clusterID:   parts[1],
 		machineID:   machineID,
 	}
 
-	// Automatically register the default service
-	inferable.Tools, err = inferable.createPollingAgent()
+	rpc.tools, err = rpc.createPollingAgent()
 	if err != nil {
 		return nil, fmt.Errorf("error creating polling agent: %v", err)
 	}
 
-	// Initialize the Workflows field
-	inferable.Workflows = &Workflows{
-		inferable: inferable,
-	}
-
-	return inferable, nil
+	return rpc, nil
 }
 
-func (i *Inferable) createPollingAgent() (*pollingAgent, error) {
+// Registers a Tool
+//
+// Parameters:
+// - input: The Tool definition.
+//
+// Example:
+//
+//	// Create a new AgentRPC instance with an API secret
+//	client := inferable.New(AgentRPCOptions{
+//	    ApiSecret: "API_SECRET",
+//	})
+//
+//	sayHello, err := client.Register(Tool{
+//	  Handler:        func(input EchoInput) string {
+//	    didCallSayHello = true
+//	    return "Hello " + input.Input
+//	  },
+//	  Name:        "SayHello",
+//	  Description: "A simple greeting function",
+//	})
+//
+//	client.Listen()
+//
+//	defer client.Unlisten()
+func (i *AgentRPC) Register(fn Tool) error {
+	return i.tools.Register(fn)
+}
+
+func (i *AgentRPC) Listen() error {
+	return i.tools.Listen()
+}
+
+func (i *AgentRPC) Unlisten() {
+	i.tools.Unlisten()
+}
+
+func (i *AgentRPC) createPollingAgent() (*pollingAgent, error) {
 
 	agent := &pollingAgent{
 		Tools:     make(map[string]Tool),
@@ -128,14 +132,14 @@ func (i *Inferable) createPollingAgent() (*pollingAgent, error) {
 	return agent, nil
 }
 
-func (i *Inferable) callFunc(funcName string, args ...interface{}) ([]reflect.Value, error) {
-	fn, exists := i.Tools.Tools[funcName]
+func (i *AgentRPC) callFunc(funcName string, args ...interface{}) ([]reflect.Value, error) {
+	fn, exists := i.tools.Tools[funcName]
 	if !exists {
 		return nil, fmt.Errorf("function with name '%s' not found", funcName)
 	}
 
 	// Get the reflect.Value of the function
-	fnValue := reflect.ValueOf(fn.Func)
+	fnValue := reflect.ValueOf(fn.Handler)
 
 	// Check if the number of arguments is correct
 	if len(args) != fnValue.Type().NumIn() {
@@ -152,7 +156,7 @@ func (i *Inferable) callFunc(funcName string, args ...interface{}) ([]reflect.Va
 	return fnValue.Call(inArgs), nil
 }
 
-func (i *Inferable) fetchData(options client.FetchDataOptions) ([]byte, http.Header, error, int) {
+func (i *AgentRPC) fetchData(options client.FetchDataOptions) ([]byte, http.Header, error, int) {
 	// Add default Content-Type header if not present
 	if options.Headers == nil {
 		options.Headers = make(map[string]string)
@@ -165,7 +169,7 @@ func (i *Inferable) fetchData(options client.FetchDataOptions) ([]byte, http.Hea
 	return []byte(data), headers, err, status
 }
 
-func (i *Inferable) serverOk() error {
+func (i *AgentRPC) serverOk() error {
 	data, _, err, _ := i.client.FetchData(client.FetchDataOptions{
 		Path:   "/live",
 		Method: "GET",
@@ -190,21 +194,7 @@ func (i *Inferable) serverOk() error {
 	return nil
 }
 
-func (i *Inferable) getClusterId() (string, error) {
-	if i.clusterID == "" {
-		clusterId, err := i.registerMachine(nil)
-		if err != nil {
-			return "", fmt.Errorf("failed to register machine: %v", err)
-		}
-
-		i.clusterID = clusterId
-	}
-
-	return i.clusterID, nil
-}
-
-func (i *Inferable) registerMachine(s *pollingAgent) (string, error) {
-
+func (i *AgentRPC) registerMachine(s *pollingAgent) (string, error) {
 	// Prepare the payload for registration
 	payload := struct {
 		Service string `json:"service,omitempty"`
