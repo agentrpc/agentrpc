@@ -1,4 +1,4 @@
-package inferable
+package agentrpc
 
 // VALID_INTERRUPT_TYPES defines the valid types of interrupts that can occur during workflow execution.
 type VALID_INTERRUPT_TYPES string

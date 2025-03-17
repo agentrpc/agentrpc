@@ -1,9 +1,9 @@
-package inferable
+package agentrpc
 
 import (
 	"testing"
 
-	"github.com/inferablehq/inferable/sdk-go/internal/util"
+	"github.com/agentrpc/agentrpc/sdk-go/internal/util"
 )
 
 type EchoInput struct {

@@ -1,4 +1,4 @@
-package inferable
+package agentrpc
 
 import (
 	"context"
@@ -12,7 +12,7 @@ import (
 
 	"github.com/invopop/jsonschema"
 
-	"github.com/inferablehq/inferable/sdk-go/internal/client"
+	"github.com/agentrpc/agentrpc/sdk-go/internal/client"
 )
 
 const (

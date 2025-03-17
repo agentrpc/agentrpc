@@ -1,4 +1,4 @@
-package inferable
+package agentrpc
 
 import (
 	"net/http"

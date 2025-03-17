@@ -1,5 +1,5 @@
-// Package inferable provides a client for interacting with the Inferable API.
-package inferable
+// Package agentrpc provides a client for interacting with the AgentRPC platform.
+package agentrpc
 
 import (
 	"encoding/json"
@@ -8,8 +8,8 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/inferablehq/inferable/sdk-go/internal/client"
-	"github.com/inferablehq/inferable/sdk-go/internal/util"
+	"github.com/agentrpc/agentrpc/sdk-go/internal/client"
+	"github.com/agentrpc/agentrpc/sdk-go/internal/util"
 )
 
 // Version of the AgentRPC package

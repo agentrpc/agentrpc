@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	MachineIDFile = "inferable_machine_id.json"
+	MachineIDFile = "agentrpc_machine_id.json"
 )
 
 func GetMachineID() string {

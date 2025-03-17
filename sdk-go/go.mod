@@ -1,4 +1,4 @@
-module github.com/inferablehq/inferable/sdk-go
+module github.com/agentrpc/agentrpc/sdk-go
 
 go 1.22.9
 
