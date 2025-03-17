@@ -5,7 +5,7 @@ install:
 	uv pip install .[dev]
 
 test:
-	uv run pytest tests/ -v
+	uv run pytest -v -s tests
 
 lint:
 	uv run ruff check .
