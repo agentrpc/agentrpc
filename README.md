@@ -17,9 +17,7 @@ AgentRPC wraps your functions in a universal RPC interface, connecting them to a
 - OpenAI-compatible tool definitions (OpenAI, Anthropic, LiteLLM, OpenRouter, etc.)
 
 <p align="center">
-
-![deployment](./assets/deployment.png | width=500)
-
+<img src="./assets/deployment.png" alt="deployment" width="500">
 </p>
 
 ## How It Works
