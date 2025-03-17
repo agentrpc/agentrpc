@@ -165,9 +165,7 @@ export class AgentRPC {
     const registration: ToolRegistrationInput<T> = {
       name,
       handler,
-      schema: {
-        input: schema.input,
-      },
+      schema,
       config,
       description,
     };

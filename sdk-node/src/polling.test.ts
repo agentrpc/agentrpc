@@ -14,11 +14,9 @@ describe("Polling functions", () => {
       handler: async (input: { text: string }) => {
         return { echo: input.text };
       },
-      schema: {
-        input: z.object({
-          text: z.string(),
-        }),
-      },
+      schema: z.object({
+        text: z.string(),
+      }),
     });
 
     client.register({
@@ -26,11 +24,9 @@ describe("Polling functions", () => {
       handler: async (_input) => {
         throw new Error("This is an error");
       },
-      schema: {
-        input: z.object({
-          text: z.string(),
-        }),
-      },
+      schema: z.object({
+        text: z.string(),
+      }),
     });
 
     // Register a function that takes some time to complete
@@ -40,12 +36,10 @@ describe("Polling functions", () => {
         await new Promise((resolve) => setTimeout(resolve, input.delay));
         return { echo: input.text, delayed: true };
       },
-      schema: {
-        input: z.object({
-          text: z.string(),
-          delay: z.number(),
-        }),
-      },
+      schema: z.object({
+        text: z.string(),
+        delay: z.number(),
+      }),
     });
 
     // Register a function for testing invalid tools
@@ -54,11 +48,9 @@ describe("Polling functions", () => {
       handler: async (input: { text: string }) => {
         return { success: true, text: input.text };
       },
-      schema: {
-        input: z.object({
-          text: z.string(),
-        }),
-      },
+      schema: z.object({
+        text: z.string(),
+      }),
     });
 
     return {

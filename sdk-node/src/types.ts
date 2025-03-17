@@ -23,15 +23,11 @@ export type JsonSchemaInput = {
   $schema: string;
 };
 
-export type ToolSchema<T extends z.ZodTypeAny | JsonSchemaInput> = {
-  input: T;
-};
-
 export type ToolRegistrationInput<T extends z.ZodTypeAny | JsonSchemaInput> = {
   name: string;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   handler: (input: ToolInput<T>) => Promise<any>;
-  schema: ToolSchema<T>;
+  schema: T;
   config?: ToolConfig;
   description?: string;
 };

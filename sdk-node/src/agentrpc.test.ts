@@ -19,11 +19,9 @@ const testService = () => {
     handler: async (input: { text: string }) => {
       return { echo: input.text };
     },
-    schema: {
-      input: z.object({
-        text: z.string(),
-      }),
-    },
+    schema: z.object({
+      text: z.string(),
+    }),
   });
 
   client.register({
@@ -31,11 +29,9 @@ const testService = () => {
     handler: async (_input) => {
       throw new Error("This is an error");
     },
-    schema: {
-      input: z.object({
-        text: z.string(),
-      }),
-    },
+    schema: z.object({
+      text: z.string(),
+    }),
   });
 
   return {

@@ -27,9 +27,7 @@ import { z } from "zod";
 
 client.register({
   name: "hello",
-  schema: {
-    input: z.object({ name: z.string() }),
-  },
+  schema: z.object({ name: z.string() }),
   handler: async ({ name }) => `Hello ${name}`,
   // Optional
   config: {

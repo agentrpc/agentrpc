@@ -23,17 +23,13 @@ export const animalService = () => {
   client.register({
     name: `${prefix}_getNormalAnimal`,
     handler: getNormalAnimal,
-    schema: {
-      input: z.object({}),
-    },
+    schema: z.object({}),
   });
 
   client.register({
     name: `${prefix}_getCustomAnimal`,
     handler: getCustomAnimal,
-    schema: {
-      input: z.object({}),
-    },
+    schema: z.object({}),
   });
 
   return {

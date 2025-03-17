@@ -252,9 +252,7 @@ export const registerMachine = async (
         name: func.name,
         description: func.description,
         schema: JSON.stringify(
-          isZodType(func.schema?.input)
-            ? zodToJsonSchema(func.schema?.input)
-            : func.schema?.input,
+          isZodType(func.schema) ? zodToJsonSchema(func.schema) : func.schema,
         ),
         config: func.config,
       })),

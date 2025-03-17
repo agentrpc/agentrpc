@@ -34,12 +34,10 @@ export const productService = () => {
   client.register({
     name: `${prefix}_getProduct10sCache`,
     handler: getProduct,
-    schema: {
-      input: z.object({
-        id: z.string(),
-        random: z.string(),
-      }),
-    },
+    schema: z.object({
+      id: z.string(),
+      random: z.string(),
+    }),
     config: {
       retryCountOnStall: 0,
       timeoutSeconds: 5,
@@ -53,12 +51,10 @@ export const productService = () => {
   client.register({
     name: `${prefix}_getProduct1sCache`,
     handler: getProduct,
-    schema: {
-      input: z.object({
-        id: z.string(),
-        random: z.string(),
-      }),
-    },
+    schema: z.object({
+      id: z.string(),
+      random: z.string(),
+    }),
     config: {
       retryCountOnStall: 0,
       timeoutSeconds: 5,
@@ -78,11 +74,9 @@ export const productService = () => {
       failingFunctionCount++;
       return failingFunctionCount;
     },
-    schema: {
-      input: z.object({
-        id: z.string(),
-      }),
-    },
+    schema: z.object({
+      id: z.string(),
+    }),
     config: {
       retryCountOnStall: 0,
       timeoutSeconds: 2,
@@ -92,11 +86,9 @@ export const productService = () => {
   client.register({
     name: `${prefix}_succeedsOnSecondAttempt`,
     handler: succeedsOnSecondAttempt,
-    schema: {
-      input: z.object({
-        id: z.string(),
-      }),
-    },
+    schema: z.object({
+      id: z.string(),
+    }),
     config: {
       retryCountOnStall: 2,
       timeoutSeconds: 2,
