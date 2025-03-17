@@ -33,6 +33,7 @@ Choose your preferred language to register a tool with AgentRPC:
 
     client.register({
       name: "getWeather",
+      description: "Return weather information at a given location",
       schema: z.object({ location: z.string() }),
       handler: async ({ location }) => {
         // Implementation details
@@ -56,28 +57,38 @@ Choose your preferred language to register a tool with AgentRPC:
     )
 
     func main() {
-      client := agentrpc.NewClient(agentrpc.ClientOptions{
+      client := agentrpc.New(agentrpc.Options{
         APISecret: "YOUR_API_SECRET",
       })
 
-      client.Register("getWeather", func(ctx context.Context, params map[string]interface{}) (interface{}, error) {
-        location, ok := params["location"].(string)
-        if !ok {
-          return nil, fmt.Errorf("location must be a string")
-        }
-        
-        // Implementation details
-        data, err := fetchWeatherData(location)
-        if err != nil {
-          return nil, err
-        }
-        
-        return data, nil
+      client.Register(agentrpc.Tool{
+        Name:        "getWeather",
+        Description: "Return weather information at a given location",
+        Handler: func(input struct{ location string }) string {
+          location, ok := params["location"].(string)
+          if !ok {
+            return nil, fmt.Errorf("location must be a string")
+          }
+
+          // Implementation details
+          data, err := fetchWeatherData(location)
+          if err != nil {
+            return nil, err
+          }
+
+          return data, nil
+          },
       })
 
-      if err := client.Listen(context.Background()); err != nil {
-        panic(err)
-      }
+      go func() {
+        client.Listen()
+      }()
+
+      sigChan := make(chan os.Signal, 1)
+      signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
+
+      <-sigChan
+      defer client.Unlisten()
     }
     ```
   </Tab>
@@ -86,39 +97,96 @@ Choose your preferred language to register a tool with AgentRPC:
 For more detailed examples, check out the SDK repositories:
 - [TypeScript SDK](https://github.com/agentrpc/agentrpc/tree/main/sdk-node)
 - [Go SDK](https://github.com/agentrpc/agentrpc/tree/main/sdk-go)
+- [Python SDK](https://github.com/agentrpc/agentrpc/tree/main/sdk-python)
 
 ### 3. Connect to an Agent
 
 <Tabs>
-  <Tab title="OpenAI SDK">
+  <Tab title="OpenAI Agents SDK">
+    ```python
+    from agentrpc import AgentRPC
+    from agents import Agent, Runner
+    import asyncio
+    import os
+
+
+    async def main():
+        agentrpc = AgentRPC(api_secret=os.environ.get("AGENTRPC_API_SECRET", ""))
+        agent = Agent(name="AgentRPC Agent", tools=agentrpc.openai.agents.get_tools())
+
+        result = await Runner.run(
+            agent,
+            input="What is the weather in Melbourne?",
+        )
+        print(result.final_output)
+
+
+    if __name__ == "__main__":
+        asyncio.run(main())
+    ```
+  </Tab>
+  <Tab title="OpenAI Completions SDK">
     ```python
     from agentrpc import AgentRPC
     from openai import OpenAI
+    import os
 
-    openai = OpenAI(api_key="YOUR_OPENAI_API_KEY")
-    agentrpc = AgentRPC(api_secret="YOUR_API_SECRET")
 
-    tools = agentrpc.openai.get_tools()
+    def main():
+        agentrpc = AgentRPC(api_secret=os.environ.get("AGENTRPC_API_SECRET", ""))
+        openai = OpenAI()
 
-    completion = openai.chat.completions.create(
-        model="gpt-4o",
-        messages=[{
-            "role": "user",
-            "content": "What is the weather in Melbourne?"
-        }],
-        tools=tools,
-    )
+        tools = agentrpc.openai.completions.get_tools()
 
-    if completion.choices[0].message.tool_calls:
-        for tool_call in completion.choices[0].message.tool_calls:
-            print("Agent is calling Tool", tool_call.function.name)
-            result = agentrpc.openai.execute_tool(tool_call)
-            print(result)
+        completion = openai.chat.completions.create(
+            model="gpt-4o",
+            messages=[{"role": "user", "content": "What is the weather in Melbourne?"}],
+            tools=tools,
+        )
+
+        if completion.choices[0].message.tool_calls:
+            for tool_call in completion.choices[0].message.tool_calls:
+                print("Agent is calling Tool", tool_call.function.name)
+                result = agentrpc.openai.completions.execute_tool(tool_call)
+                print(result)
+
+
+    if __name__ == "__main__":
+        main()
     ```
   </Tab>
-  <Tab title="MCP Server">
+  <Tab title="Claude MCP">
+    ```json
+    {
+      "mcpServers": {
+        "agentrpc": {
+          "command": "npx",
+          "args": [
+            "-y",
+            "agentrpc",
+            "mcp"
+          ],
+          "env": {
+            "AGENTRPC_API_SECRET": "<YOUR_API_SECRET>"
+          }
+        }
+      }
+    }
     ```
-    Coming soon - Connect to the hosted MCP server
+  </Tab>
+  <Tab title="Claude Cursor">
+    ```json
+    {
+      "mcpServers": {
+        "agentrpc": {
+          "command": "npx",
+          "args": ["-y", "agentrpc", "mcp"],
+          "env": {
+            "AGENTRPC_API_SECRET": "<YOUR_API_SECRET>"
+          }
+        }
+      }
+    }
     ```
   </Tab>
 </Tabs>

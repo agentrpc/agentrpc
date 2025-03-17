@@ -17,7 +17,7 @@ func main() {
 		Name:        "getWeather",
 		Description: "Return weather information at a given location",
 		Handler: func(input struct{ location string }) string {
-			return "probably raining"
+			return "probably raining", nill
 		},
 	})
 

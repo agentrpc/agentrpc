@@ -159,9 +159,8 @@ For more details, visit the [Go SDK GitHub repository](https://github.com/agentr
 
 ## Python SDK
 
-The Python SDK provides a Pythonic way to register functions as tools for AI agents.
+> ⚠️ The AgentRPC Python SDK does **not** currently support registering tools.
 
-### Installation
 
 ```bash
 pip install agentrpc
@@ -183,39 +182,58 @@ def get_weather(location: str) -> dict:
 client.listen()
 ```
 
-### OpenAI Integration
+### OpenAI Tools
+
+AgentRPC provides integration with OpenAI's function calling capabilities, allowing you to expose your registered RPC functions as tools for OpenAI models to use.
+
+#### Agents SDK
+
+##### `client.openai.agents.get_tools()`
+
+The `get_tools()` method returns your registered AgentRPC functions as OpenAI Agent tools.
 
 ```python
-from agentrpc import AgentRPC
-from openai import OpenAI
+# First register your functions with AgentRPC (Locally or on another machine)
 
-openai = OpenAI(api_key="YOUR_OPENAI_API_KEY")
-agentrpc = AgentRPC(api_secret="YOUR_API_SECRET")
+# Attach the tools to the Agent
+agent = Agent(name="AgentRPC Agent", tools=agentrpc.openai.agents.get_tools())
 
-# Get tools formatted for OpenAI
-tools = agentrpc.openai.get_tools()
-
-# Use tools with OpenAI
-completion = openai.chat.completions.create(
-    model="gpt-4o",
-    messages=[{"role": "user", "content": "What's the weather in San Francisco?"}],
-    tools=tools,
+result = await Runner.run(
+    agent,
+    input="What is the weather in Melbourne?",
 )
 
-# Execute tool calls
-if completion.choices[0].message.tool_calls:
-    for tool_call in completion.choices[0].message.tool_calls:
-        result = agentrpc.openai.execute_tool(tool_call)
-        # Use the result...
+print(result.final_output)
+
 ```
 
-For more details, visit the [Python SDK GitHub repository](https://github.com/agentrpc/agentrpc/tree/main/sdk-python).
+#### Completions SDK
+##### `client.openai.completions.get_tools()`
 
-## Coming Soon
+The `get_tools()` method returns your registered AgentRPC functions formatted as OpenAI tools, ready to be passed to OpenAI's API.
 
-<Card
-  title=".NET SDK"
-  icon="microsoft"
->
-  Support for .NET applications is coming soon.
-</Card> 
+```python
+# First register your functions with AgentRPC (Locally or on another machine)
+
+# Then get the tools formatted for OpenAI
+tools = agentrpc.openai.get_tools()
+
+# Pass these tools to OpenAI
+chat_completion = openai.chat.completions.create(
+  model="gpt-4-1106-preview",
+  messages=messages,
+  tools=tools,
+  tool_choice="auto"
+)
+```
+
+##### `client.openai.completions.execute_tool(tool_call)`
+
+The `execute_tool()` method executes an OpenAI tool call against your registered AgentRPC functions.
+
+```python
+# Process tool calls from OpenAI's response
+if chat_completion.choices[0].tool_calls:
+  for tool_call in response_message.tool_calls:
+    client.openai.execute_tool(tool_call)
+```
