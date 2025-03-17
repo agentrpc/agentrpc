@@ -10,16 +10,6 @@ class OpenAIIntegration:
         self.__client = client
         self.__cluster_id = None
 
-    def __get_cluster_id(self) -> str:
-        """Get or initialize the cluster ID.
-
-        Returns:
-            The cluster ID.
-        """
-        if not self.__cluster_id:
-            self.__cluster_id = self.__client.get_cluster_id()
-        return self.__cluster_id
-
     def get_tools(self) -> List[ChatCompletionToolParam]:
         """Get tools in OpenAI format.
 
@@ -29,11 +19,10 @@ class OpenAIIntegration:
         Raises:
             AgentRPCError: If the request fails.
         """
-        # Ensure we have a cluster ID
-        cluster_id = self.__get_cluster_id()
-
         # Make the API call to list tools
-        tool_response = self.__client.list_tools({"params": {"clusterId": cluster_id}})
+        tool_response = self.__client.list_tools(
+            {"params": {"clusterId": self.__client.cluster_id}}
+        )
 
         # Check the response status
         if tool_response.get("status") != 200:
@@ -72,16 +61,15 @@ class OpenAIIntegration:
             AgentRPCError: If the tool execution fails.
         """
         try:
-            # Ensure we have a cluster ID
-            cluster_id = self.__get_cluster_id()
-
             # Get function name and arguments
             function_name = tool_call.function.name
             arguments = json.loads(tool_call.function.arguments)
 
             # Create job and poll for completion
             job_result = self.__client.create_and_poll_job(
-                cluster_id=cluster_id, tool_name=function_name, input_data=arguments
+                cluster_id=self.__client.cluster_id,
+                tool_name=function_name,
+                input_data=arguments,
             )
 
             status = job_result.get("status")

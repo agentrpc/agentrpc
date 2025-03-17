@@ -16,14 +16,18 @@ class AgentRPC:
             api_secret: The API secret key.
             endpoint: Custom API endpoint. Defaults to 'https://api.agentrpc.com'.
         """
+
         self.__api_secret = api_secret
         self.__endpoint = endpoint
         self.__http_client = HTTPClient(endpoint, api_secret)
         self.openai = OpenAIIntegration(self)
 
-    def get_cluster_id(self) -> str:
-        """Get the cluster ID from the HTTP client."""
-        return self.__http_client.get_cluster_id()
+        parts = api_secret.split("_")
+        if len(parts) != 3 or parts[0] != "sk":
+            raise ValueError("Invalid API Secret.")
+        else:
+            _, cluster_id, rand = parts
+            self.cluster_id = cluster_id
 
     def list_tools(self, params):
         """List tools from the HTTP client."""

@@ -35,53 +35,6 @@ class HTTPClient:
             "x-machine-id": "python",
         }
 
-    def get_cluster_id(self) -> str:
-        """Get the cluster ID.
-
-        If no cluster ID is set, registers a machine without any services
-        to test API key and get the cluster ID.
-
-        Returns:
-            The cluster ID.
-
-        Raises:
-            AgentRPCError: If the request fails.
-        """
-        if not self.cluster_id:
-            register_result = self.register_machine()
-            self.cluster_id = register_result.get("clusterId")
-            self.machine_id = register_result.get("machineId")
-
-        return self.cluster_id
-
-    def register_machine(self, functions=None, tools=None) -> Dict[str, Any]:
-        """Register a machine with the AgentRPC API.
-
-        Args:
-            functions: Optional functions to register.
-            tools: Optional tools to register.
-
-        Returns:
-            The API response.
-
-        Raises:
-            AgentRPCError: If the request fails.
-        """
-        payload = {
-            "type": "sdk",
-            "language": "python",
-            "version": self.headers.get("x-machine-sdk-version", "unknown"),
-        }
-        if functions:
-            payload["functions"] = functions
-        if tools:
-            payload["tools"] = tools
-
-        try:
-            return self.post("/machines", payload)
-        except Exception as e:
-            raise AgentRPCError(f"Failed to register machine: {str(e)}")
-
     def list_tools(self, params: Dict[str, Any]) -> Dict[str, Any]:
         """List tools from the AgentRPC API.
 
