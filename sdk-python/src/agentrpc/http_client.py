@@ -1,9 +1,13 @@
 import time
+import json
 from importlib.metadata import version, PackageNotFoundError
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List, Tuple, Union
 import requests
+import logging
 from .errors import AgentRPCError
 
+# Setup logging
+logger = logging.getLogger("agentrpc")
 
 class HTTPClient:
     """HTTP client for making requests to the AgentRPC API."""
@@ -34,6 +38,86 @@ class HTTPClient:
             "x-machine-sdk-language": "python",
             "x-machine-id": "python",
         }
+
+    def get(self, path: str, params: Optional[Dict[str, str]] = None) -> Any:
+        """Make a GET request to the API.
+        
+        Args:
+            path: The API path.
+            params: Optional query parameters.
+            
+        Returns:
+            The parsed response.
+            
+        Raises:
+            AgentRPCError: If the request fails.
+        """
+        url = f"{self.endpoint}{path}"
+        logger.debug(f"GET {url}")
+        
+        try:
+            response = requests.get(
+                url,
+                headers=self.headers,
+                params=params
+            )
+            response.raise_for_status()
+            return response.json()
+        except requests.RequestException as e:
+            logger.error(f"Request failed: {str(e)}")
+            if hasattr(e, "response") and e.response is not None:
+                try:
+                    error_data = e.response.json()
+                    error_message = error_data.get("error", {}).get("message", str(e))
+                    raise AgentRPCError(error_message, status_code=e.response.status_code)
+                except (ValueError, KeyError):
+                    # If response is not JSON or doesn't have expected structure
+                    raise AgentRPCError(f"Request failed: {str(e)}", status_code=e.response.status_code if hasattr(e, "response") else None)
+            raise AgentRPCError(f"Request failed: {str(e)}")
+            
+    def post(self, path: str, data: Any, params: Optional[Dict[str, str]] = None, headers: Optional[Dict[str, str]] = None) -> Any:
+        """Make a POST request to the API.
+        
+        Args:
+            path: The API path.
+            data: The request payload.
+            params: Optional query parameters.
+            headers: Optional additional headers.
+            
+        Returns:
+            The parsed response.
+            
+        Raises:
+            AgentRPCError: If the request fails.
+        """
+        url = f"{self.endpoint}{path}"
+        logger.debug(f"POST {url}")
+        
+        # Merge headers
+        request_headers = self.headers.copy()
+        if headers:
+            request_headers.update(headers)
+            
+        try:
+            response = requests.post(
+                url,
+                headers=request_headers,
+                json=data,
+                params=params
+            )
+            response.raise_for_status()
+            return response.json()
+        except requests.RequestException as e:
+            logger.error(f"Request failed: {str(e)}")
+            if hasattr(e, "response") and e.response is not None:
+                try:
+                    error_data = e.response.json()
+                    error_message = error_data.get("error", {}).get("message", str(e))
+                    raise AgentRPCError(error_message, status_code=e.response.status_code)
+                except (ValueError, KeyError):
+                    # If response is not JSON or doesn't have expected structure
+                    raise AgentRPCError(f"Request failed: {str(e)}", status_code=e.response.status_code if hasattr(e, "response") else None)
+            raise AgentRPCError(f"Request failed: {str(e)}")
 
     def list_tools(self, params: Dict[str, Any]) -> Dict[str, Any]:
         """List tools from the AgentRPC API.
@@ -96,170 +180,81 @@ class HTTPClient:
 
         try:
             return self.post(
-                f"/clusters/{cluster_id}/jobs", payload, params=query_params
+                f"/clusters/{cluster_id}/jobs", 
+                payload, 
+                params=query_params
             )
         except Exception as e:
             raise AgentRPCError(f"Failed to create job: {str(e)}")
 
-    def get_job(self, cluster_id: str, job_id: str) -> Dict[str, Any]:
-        """Get job details from the AgentRPC API.
+    def get_job(self, job_id: str) -> Dict[str, Any]:
+        """Get job status from the AgentRPC API.
 
         Args:
-            cluster_id: The cluster ID.
             job_id: The job ID.
 
         Returns:
-            The job details.
+            The API response.
 
         Raises:
             AgentRPCError: If the request fails.
         """
         try:
-            response = self.get(f"/clusters/{cluster_id}/jobs/{job_id}")
-            return {"status": 200, "body": response}
+            return self.get(f"/jobs/{job_id}")
         except Exception as e:
-            raise AgentRPCError(f"Failed to get job details: {str(e)}")
-
-    def poll_for_job_completion(
-        self,
-        cluster_id: str,
-        job_id: str,
-        initial_status: Optional[str] = None,
-        initial_result: str = "",
-        initial_result_type: str = "rejection",
-        poll_interval: float = 1.0,
-    ) -> Dict[str, str]:
-        """Poll for job completion.
-
-        Args:
-            cluster_id: The cluster ID.
-            job_id: The job ID.
-            initial_status: The initial job status.
-            initial_result: The initial job result.
-            initial_result_type: The initial job result type.
-            poll_interval: How often to poll for updates.
-
-        Returns:
-            The final job status, result, and result type.
-
-        Raises:
-            AgentRPCError: If the request fails.
-        """
-        status = initial_status
-        result = initial_result
-        result_type = initial_result_type
-
-        while not status or status not in ["failure", "done"]:
-            time.sleep(poll_interval)
-
-            details = self.get_job(cluster_id, job_id)
-
-            if details.get("status") != 200:
-                raise AgentRPCError(
-                    f"Failed to fetch job details: {details.get('status')}"
-                )
-
-            body = details.get("body", {})
-            status = body.get("status")
-            result = body.get("result") or ""
-            result_type = body.get("resultType") or "rejection"
-
-        return {"status": status, "result": result, "resultType": result_type}
+            raise AgentRPCError(f"Failed to get job: {str(e)}")
 
     def create_and_poll_job(
-        self, cluster_id: str, tool_name: str, input_data: Dict[str, Any]
-    ) -> Dict[str, str]:
-        """Create a job and poll for completion.
+        self,
+        cluster_id: str,
+        tool_name: str,
+        input_data: Dict[str, Any],
+        wait_time: int = 0,
+        max_retries: int = 100,
+        retry_interval: int = 1,
+    ) -> Dict[str, Any]:
+        """Create a job and poll for its completion.
 
         Args:
             cluster_id: The cluster ID.
             tool_name: The tool name.
             input_data: The input data.
+            wait_time: How long to wait for job completion in the initial request.
+            max_retries: Maximum number of polling retries.
+            retry_interval: Time between polling in seconds.
 
         Returns:
-            The final job status, result, and result type.
+            The final job status.
 
         Raises:
-            AgentRPCError: If the request fails.
+            AgentRPCError: If the job fails or polling times out.
         """
-        # Create the job with maximum server-side wait time
-        create_result = self.create_job(
+        # Try to create the job with the initial wait time
+        job = self.create_job(
             cluster_id=cluster_id,
             tool_name=tool_name,
             input_data=input_data,
-            wait_time=20,  # Maximum wait time
+            wait_time=wait_time,
         )
+
+        if job.get("status") == "done":
+            return job
+
+        job_id = job.get("id")
+        if not job_id:
+            raise AgentRPCError("No job ID returned from create_job")
 
         # Poll for completion
-        return self.poll_for_job_completion(
-            cluster_id=cluster_id,
-            job_id=create_result.get("id"),
-            initial_status=create_result.get("status"),
-            initial_result=create_result.get("result") or "",
-            initial_result_type=create_result.get("resultType") or "rejection",
-        )
+        for _ in range(max_retries):
+            time.sleep(retry_interval)
+            job = self.get_job(job_id)
+            status = job.get("status")
 
-    def get(self, path: str, params: Optional[Dict[str, Any]] = None) -> Any:
-        """Make a GET request to the API.
+            if status == "done":
+                return job
+            elif status == "failure":
+                raise AgentRPCError(f"Job failed: {job.get('error')}")
+            elif status not in ["pending", "running"]:
+                raise AgentRPCError(f"Unexpected job status: {status}")
 
-        Args:
-            path: The API path.
-            params: Query parameters.
-
-        Returns:
-            The API response.
-
-        Raises:
-            AgentRPCError: If the request fails for any reason.
-        """
-        url = f"{self.endpoint}{path}"
-
-        try:
-            response = requests.get(url, params=params, headers=self.headers)
-            response.raise_for_status()
-            return response.json()
-        except requests.HTTPError as e:
-            raise AgentRPCError(
-                f"HTTP error: {e.response.status_code} - {e.response.text}",
-                status_code=e.response.status_code,
-                response=e.response.text,
-            )
-        except requests.RequestException as e:
-            raise AgentRPCError(f"Request error: {str(e)}")
-        except Exception as e:
-            raise AgentRPCError(f"Unexpected error: {str(e)}")
-
-    def post(
-        self, path: str, data: Dict[str, Any], params: Optional[Dict[str, Any]] = None
-    ) -> Any:
-        """Make a POST request to the API.
-
-        Args:
-            path: The API path.
-            data: The request body.
-            params: Optional query parameters.
-
-        Returns:
-            The API response.
-
-        Raises:
-            AgentRPCError: If the request fails for any reason.
-        """
-        url = f"{self.endpoint}{path}"
-
-        try:
-            response = requests.post(
-                url, json=data, params=params, headers=self.headers
-            )
-            response.raise_for_status()
-            return response.json()
-        except requests.HTTPError as e:
-            raise AgentRPCError(
-                f"HTTP error: {e.response.status_code} - {e.response.text}",
-                status_code=e.response.status_code,
-                response=e.response.text,
-            )
-        except requests.RequestException as e:
-            raise AgentRPCError(f"Request error: {str(e)}")
-        except Exception as e:
-            raise AgentRPCError(f"Unexpected error: {str(e)}")
+        raise AgentRPCError(f"Job polling timed out after {max_retries} retries")
