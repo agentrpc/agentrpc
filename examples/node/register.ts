@@ -1,0 +1,21 @@
+import { AgentRPC } from 'agentrpc';
+import { z } from 'zod';
+
+const rpc = new AgentRPC({
+  apiSecret: process.env.AGENTRPC_API_SECRET!,
+});
+
+rpc.register({
+  name: 'getWeather',
+  description: 'Return weather information at a given location',
+  schema: z.object({ location: z.string() }),
+  handler: async ({ location }) => {
+    return {
+      location: location,
+      temperature: 'variable',
+      parcipitation: 'probably',
+    };
+  },
+});
+
+rpc.listen();

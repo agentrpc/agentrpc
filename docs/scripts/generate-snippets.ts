@@ -6,14 +6,15 @@ async function generateSnippets() {
   const rootDir = path.resolve(__dirname, '../../');
   const snippetsDir = path.resolve(__dirname, '../snippets');
 
-  // Find all SDK example directories
-  const examplePaths = await glob('sdk-*/examples/**/*.*', {
+  // Find all SDK example files (not directories)
+  const examplePaths = await glob('examples/**/*.{py,go,ts}', {
     cwd: rootDir,
     ignore: [
       '**/node_modules/**',
-      '**/*.cpython-*',  // Exclude Python bytecode files
-      '**/__pycache__/**' // Also exclude pycache directory
-    ]
+      '**/*.cpython-*',
+      '**/__pycache__/**'
+    ],
+    nodir: true // Only match files, not directories
   });
 
   // Ensure snippets directory exists
@@ -24,10 +25,9 @@ async function generateSnippets() {
     const content = await fs.promises.readFile(path.join(rootDir, filepath), 'utf-8');
     const ext = path.extname(filepath);
     const filename = path.basename(filepath, ext);
-    const sdkName = filepath.split('/')[0].replace('sdk-', ''); // e.g., 'node', 'python'
+    const sdkName = filepath.split('/')[1]; // e.g., 'node', 'python'
 
-    // Create snippet file name: {example-name}-{sdk}.mdx
-    const snippetFilename = `${filename}-${sdkName}.mdx`;
+    const snippetFilename = `${sdkName}-${filename}.mdx`;
 
     // Determine the language for syntax highlighting based on file extension
     const language = ext.slice(1); // Remove the dot from extension
