@@ -4,68 +4,18 @@ description: 'Connect Anthropic Claude models to your AgentRPC tools'
 icon: 'brain'
 ---
 
-Anthropic provides a compatibility layer that allows you to use the OpenAI SDK to interact with Claude models. This is useful for quickly evaluating Anthropic's capabilities with minimal code changes.
 
-## TypeScript/JavaScript
+import NodeClude from '/snippets/openai-completions-claude-node.mdx';
+import PythonClaude from '/snippets/openai-completions-claude-python.mdx';
 
-```typescript
-import OpenAI from 'openai';
+Anthropic provides a compatibility layer that allows you to use the OpenAI SDK to interact with Claude models.
 
-// Configure the OpenAI SDK to use Anthropic's API
-const openai = new OpenAI({
-  apiKey: 'YOUR_ANTHROPIC_API_KEY',
-  baseURL: 'https://api.anthropic.com/v1/openai',
-});
+This is useful for quickly evaluating Anthropic's capabilities with minimal code changes.
 
-// Get tools formatted for OpenAI (these will work with Anthropic)
-const tools = await rpc.OpenAI.getTools();
+## TypeScript
 
-// Use with Anthropic via OpenAI SDK
-const chatCompletion = await openai.chat.completions.create({
-  model: "claude-3-opus-20240229", // Use Claude model name
-  messages: messages,
-  tools: tools,
-  tool_choice: "auto",
-  max_tokens: 1024,
-});
-
-// Execute tool calls just like with OpenAI
-if (responseMessage.tool_calls && responseMessage.tool_calls.length > 0) {
-  for (const toolCall of responseMessage.tool_calls) {
-    const result = await rpc.OpenAI.executeTool(toolCall);
-    // Use the result...
-  }
-}
-```
+<NodeClude />
 
 ## Python
 
-```python
-from openai import OpenAI
-from agentrpc import AgentRPC
-
-# Configure the OpenAI client to use Anthropic's API
-openai = OpenAI(
-    api_key="YOUR_ANTHROPIC_API_KEY",
-    base_url="https://api.anthropic.com/v1/openai"
-)
-
-agentrpc = AgentRPC(api_secret="YOUR_API_SECRET")
-
-# Get tools formatted for OpenAI (these will work with Anthropic)
-tools = agentrpc.openai.get_tools()
-
-# Use tools with Anthropic via OpenAI SDK
-completion = openai.chat.completions.create(
-    model="claude-3-sonnet-20240229",  # Use Claude model name
-    messages=[{"role": "user", "content": "What's the weather in San Francisco?"}],
-    tools=tools,
-    max_tokens=1024
-)
-
-# Execute tool calls just like with OpenAI
-if completion.choices[0].message.tool_calls:
-    for tool_call in completion.choices[0].message.tool_calls:
-        result = agentrpc.openai.execute_tool(tool_call)
-        # Use the result...
-``` 
+<PythonClaude />
