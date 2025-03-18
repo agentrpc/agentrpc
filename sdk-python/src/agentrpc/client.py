@@ -61,7 +61,7 @@ class AgentRPC:
         *,
         name: Optional[str] = None,
         description: Optional[str] = None,
-        schema: Optional[Dict[str, Any]] = None,
+        schema: Dict[str, Any],
     ) -> Callable:
         """Register a function as a tool.
         
@@ -71,21 +71,21 @@ class AgentRPC:
             func: The function to register (when used directly).
             name: Custom name for the tool (defaults to function name).
             description: Description of what the tool does.
-            schema: Custom JSON schema for the tool's input (defaults to generated schema).
+            schema: JSON schema for the tool's input (required).
             
         Returns:
             The registered function, allowing use as a decorator.
             
         Examples:
             >>> # As a decorator
-            >>> @rpc.register(name="greet", description="Greet someone")
+            >>> @rpc.register(name="greet", description="Greet someone", schema={"type": "object", "properties": {"name": {"type": "string"}}})
             >>> def say_hello(name: str) -> str:
             >>>     return f"Hello, {name}!"
             >>>
             >>> # Direct usage
             >>> def calculate_sum(a: int, b: int) -> int:
             >>>     return a + b
-            >>> rpc.register(calculate_sum, name="sum", description="Add two numbers")
+            >>> rpc.register(calculate_sum, name="sum", description="Add two numbers", schema={"type": "object", "properties": {"a": {"type": "integer"}, "b": {"type": "integer"}}})
         """
         # Initialize the polling agent if not already done
         if self.__polling_agent is None:
@@ -97,18 +97,22 @@ class AgentRPC:
                 endpoint=self.__endpoint,
             )
         
-        # When used as a decorator without args: @rpc.register
-        if func is not None and callable(func) and name is None and description is None and schema is None:
-            return self._register_function(func)
+        # When used as a decorator without args: @rpc.register(schema=...)
+        if func is not None and callable(func):
+            if schema is None:
+                raise AgentRPCError("Schema parameter is required when registering a tool")
+            return self._register_function(func, name=name, description=description, schema=schema)
             
-        # When used as decorator with args: @rpc.register(name="xyz")
-        # or when called directly with just config: rpc.register(name="xyz")(func)
+        # When used as decorator with args: @rpc.register(name="xyz", schema=...)
+        # or when called directly with just config: rpc.register(name="xyz", schema=...)(func)
         if func is None or not callable(func):
+            if schema is None:
+                raise AgentRPCError("Schema parameter is required when registering a tool")
             def decorator(fn):
                 return self._register_function(fn, name=name, description=description, schema=schema)
             return decorator
             
-        # When called directly with function: rpc.register(func, name="xyz")
+        # When called directly with function: rpc.register(func, name="xyz", schema=...)
         return self._register_function(func, name=name, description=description, schema=schema)
         
     def _register_function(
@@ -122,6 +126,10 @@ class AgentRPC:
         if not callable(func):
             raise AgentRPCError("Cannot register a non-callable object")
             
+        # Check that schema is provided
+        if schema is None:
+            raise AgentRPCError("Schema parameter is required when registering a tool")
+            
         # Use function name if no custom name provided
         tool_name = name or func.__name__
         
@@ -130,24 +138,19 @@ class AgentRPC:
         if tool_description is None and func.__doc__:
             tool_description = inspect.cleandoc(func.__doc__).split("\n")[0]
             
-        # Generate schema from function if none provided
-        tool_schema = schema
-        if tool_schema is None:
-            tool_schema = generate_schema_from_type_annotations(func)
-            
         # Validate that the schema represents an object (dictionary)
-        if not (isinstance(tool_schema, dict) and tool_schema.get("type") == "object"):
-            tool_schema = {
+        if not (isinstance(schema, dict) and schema.get("type") == "object"):
+            schema = {
                 "type": "object",
                 "properties": {},
-                **tool_schema
+                **schema
             }
             
         # Register the tool with the polling agent
         tool = Tool(
             name=tool_name,
             handler=func,
-            schema=tool_schema,
+            schema=schema,
             description=tool_description,
         )
         

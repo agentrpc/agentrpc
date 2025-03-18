@@ -36,7 +36,7 @@ class TestToolRegistration(unittest.TestCase):
         client._AgentRPC__http_client.post = mock.MagicMock(return_value={"clusterId": "test"})
         
         # Test decorator usage
-        @client.register(name="greet", description="Greet someone")
+        @client.register(name="greet", description="Greet someone", schema={"type": "object", "properties": {"name": {"type": "string"}}})
         def say_hello(name: str) -> str:
             return f"Hello, {name}!"
             
@@ -52,6 +52,8 @@ class TestToolRegistration(unittest.TestCase):
         
         # Verify schema generation
         self.assertEqual(tool.schema["type"], "object")
+        self.assertIn("properties", tool.schema)
+        self.assertIn("name", tool.schema["properties"])
         
     def test_direct_tool_registration(self):
         """Test registering a tool by direct function call."""
@@ -65,7 +67,8 @@ class TestToolRegistration(unittest.TestCase):
             return a + b
             
         # Register it directly
-        client.register(calculate_sum, name="sum", description="Add two numbers")
+        client.register(calculate_sum, name="sum", description="Add two numbers", 
+                       schema={"type": "object", "properties": {"a": {"type": "integer"}, "b": {"type": "integer"}}})
         
         # Verify tool was registered
         self.assertIsNotNone(client._AgentRPC__polling_agent)
@@ -101,7 +104,7 @@ class TestToolRegistration(unittest.TestCase):
         
         # Try to register a tool after polling has started
         with self.assertRaises(Exception):
-            client.register(lambda x: x, name="too_late")
+            client.register(lambda x: x, name="too_late", schema={"type": "object", "properties": {}})
         
     def test_tool_execution(self):
         """Test executing a registered tool."""
@@ -110,7 +113,7 @@ class TestToolRegistration(unittest.TestCase):
         client._AgentRPC__http_client.post = mock.MagicMock(return_value={"clusterId": "test"})
         
         # Register a test tool
-        @client.register
+        @client.register(schema={"type": "object", "properties": {"a": {"type": "integer"}, "b": {"type": "integer"}}})
         def multiply(a: int, b: int) -> int:
             return a * b
             
@@ -128,11 +131,41 @@ class TestToolRegistration(unittest.TestCase):
         self.assertEqual(result["result"], 35)
         self.assertEqual(result["resultType"], "number")
         
+    def test_schema_is_required(self):
+        """Test that a schema is required when registering a tool."""
+        # Create a client with a mocked HTTP client
+        client = AgentRPC(API_SECRET, API_ENDPOINT)
+        client._AgentRPC__http_client.post = mock.MagicMock(return_value={"clusterId": "test"})
+        
+        # Define a function
+        def test_func(input_data: dict) -> str:
+            return "Success"
+            
+        # Test with None schema
+        with self.assertRaises(AgentRPCError) as context:
+            # We need to pass schema=None to test the validation inside the method
+            client.register(test_func, name="test", schema=None)
+            
+        self.assertIn("Schema parameter is required", str(context.exception))
+        
+        # Test decorator usage with None schema
+        with self.assertRaises(AgentRPCError) as context:
+            @client.register(name="test_decorator", schema=None)
+            def another_test():
+                pass
+                
+        self.assertIn("Schema parameter is required", str(context.exception))
+    
     def test_call_tool(self):
         """Test calling a tool using the call_tool method."""
         # Create a client with a mocked HTTP client
         client = AgentRPC(API_SECRET, API_ENDPOINT)
         client._AgentRPC__http_client.post = mock.MagicMock(return_value={"clusterId": "test"})
+        
+        # Register a test tool with schema
+        @client.register(schema={"type": "object", "properties": {"a": {"type": "integer"}, "b": {"type": "integer"}}})
+        def multiply(a: int, b: int) -> int:
+            return a * b
         
         # Mock the create_and_poll_job method
         client._AgentRPC__http_client.create_and_poll_job = mock.MagicMock(
@@ -170,7 +203,7 @@ class TestToolRegistration(unittest.TestCase):
         # Test validation error when providing both input_data and kwargs
         with self.assertRaises(ValueError):
             client.call_tool("multiply", input_data={"a": 1}, b=2)
-
+        
     def test_execute_tool_input_validation(self):
         """Test that tool execution validates input data is a dictionary."""
         # Create a client with a mocked HTTP client
@@ -178,7 +211,7 @@ class TestToolRegistration(unittest.TestCase):
         client._AgentRPC__http_client.post = mock.MagicMock(return_value={"clusterId": "test"})
         
         # Register a test tool
-        @client.register
+        @client.register(schema={"type": "object", "properties": {"data": {"type": "object"}}})
         def test_tool(data: dict) -> str:
             return "Success"
             
@@ -234,11 +267,8 @@ class TestToolRegistrationIntegration(unittest.TestCase):
     def test_register_and_listen(self):
         """Test registering a tool and starting/stopping the poller."""
         # Register a simple test tool
-        @self.client.register(name="echo", description="Echo back the input")
-        def echo(input_data):
-            # Handle both dictionary input and direct parameter
-            if isinstance(input_data, dict) and "message" in input_data:
-                return input_data["message"]
+        @self.client.register(name="echo", description="Echo back the input", schema={"type": "object", "properties": {"message": {"type": "string"}}})
+        def echo(input_data: dict):
             return input_data
             
         # Start listening in a non-blocking way
@@ -251,12 +281,12 @@ class TestToolRegistrationIntegration(unittest.TestCase):
         time.sleep(2)
 
         # Call the tool
-        result = self.client.call_tool("echo", input_data={"message": "Hello, world!"})
-        self.assertEqual(result, "Hello, world!")
+        result = self.client.call_tool("echo", message="Hello, world!")
+        self.assertEqual(result, {"message": "Hello, world!"})
         
         # Try with keyword arguments
         result = self.client.call_tool("echo", message="Hello, again!")
-        self.assertEqual(result, "Hello, again!")
+        self.assertEqual(result, {"message": "Hello, again!"})
         
         # Stop listening
         self.client.unlisten()
