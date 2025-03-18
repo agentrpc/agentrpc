@@ -2,11 +2,11 @@ import { OpenAI } from "openai";
 import { AgentRPC } from "../src";
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-const agentrpc = new AgentRPC({ apiSecret: process.env.AGENTRPC_API_SECRET });
+const rpc = new AgentRPC({ apiSecret: process.env.AGENTRPC_API_SECRET });
 
 
 const main = async () => {
-  const tools = await agentrpc.OpenAI.getTools();
+  const tools = await rpc.OpenAI.getTools();
     const completion = await openai.chat.completions.create({
         model: "gpt-4o",
         messages: [
@@ -23,7 +23,7 @@ const main = async () => {
     if (message?.tool_calls) {
         for (const toolCall of message.tool_calls) {
             console.log("Agent is calling Tool", toolCall.function.name);
-            const result = await agentrpc.OpenAI.executeTool(toolCall);
+            const result = await rpc.OpenAI.executeTool(toolCall);
             console.log(result);
         }
     }

@@ -5,7 +5,7 @@ const rpc = new AgentRPC({
   apiSecret: process.env.AGENTRPC_API_SECRET!,
 });
 
-client.register({
+rpc.register({
   name: "getWeather",
   description: "Return weather information at a given location",
   schema: z.object({ location: z.string() }),
@@ -18,4 +18,4 @@ client.register({
   }
 });
 
-client.listen();
+rpc.listen();
