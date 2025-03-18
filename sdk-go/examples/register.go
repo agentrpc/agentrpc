@@ -9,11 +9,11 @@ import (
 )
 
 func main() {
-	client, _ := agentrpc.New(agentrpc.Options{
+	rpc, _ := agentrpc.New(agentrpc.Options{
 		APISecret: os.Getenv("AGENTRPC_API_SECRET"),
 	})
 
-	client.Register(agentrpc.Tool{
+	rpc.Register(agentrpc.Tool{
 		Name:        "getWeather",
 		Description: "Return weather information at a given location",
 		Handler: func(input struct{ location string }) string {
@@ -22,12 +22,12 @@ func main() {
 	})
 
 	go func() {
-		client.Listen()
+		rpc.Listen()
 	}()
 
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
 
 	<-sigChan
-	defer client.Unlisten()
+	defer rpc.Unlisten()
 }
