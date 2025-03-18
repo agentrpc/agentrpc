@@ -16,7 +16,7 @@ func main() {
 	rpc.Register(agentrpc.Tool{
 		Name:        "getWeather",
 		Description: "Return weather information at a given location",
-		Handler: func(input struct{ location string }) string {
+		Handler: func(input struct{ Location string }) string {
 			return "probably raining"
 		},
 	})
