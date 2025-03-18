@@ -30,7 +30,7 @@ AgentRPC provides integration with OpenAI's function calling capabilities, allow
 
 ### Agents SDK
 
-#### `rpc.OpenAI.agents.get_tools()`
+#### `rpc.openai.agents.get_tools()`
 
 The `get_tools()` method returns your registered AgentRPC functions as OpenAI Agent tools.
 
@@ -50,7 +50,7 @@ print(result.final_output)
 ```
 
 ### Completions SDK
-#### `rpc.OpenAI.completions.get_tools()`
+#### `rpc.openai.completions.get_tools()`
 
 The `get_tools()` method returns your registered AgentRPC functions formatted as OpenAI tools, ready to be passed to OpenAI's API.
 
@@ -77,7 +77,7 @@ The `execute_tool()` method executes an OpenAI tool call against your registered
 # Process tool calls from OpenAI's response
 if chat_completion.choices[0].tool_calls:
   for tool_call in response_message.tool_calls:
-    rpc.OpenAI.execute_tool(tool_call)
+    rpc.openai.execute_tool(tool_call)
 ```
 
 ## API

@@ -20,6 +20,8 @@ const chatCompletion = await openai.chat.completions.create({
   tool_choice: "auto",
 });
 
+const responseMessage = completion.choices[0]?.message;
+
 // Execute tool calls from OpenAI's response
 if (responseMessage.tool_calls && responseMessage.tool_calls.length > 0) {
   for (const toolCall of responseMessage.tool_calls) {
@@ -31,26 +33,56 @@ if (responseMessage.tool_calls && responseMessage.tool_calls.length > 0) {
 
 ## Python
 
+### Agents SDK
+
+#### `rpc.openai.agents.get_tools()`
+
+The `get_tools()` method returns your registered AgentRPC functions as OpenAI Agent tools.
+
 ```python
-from agentrpc import AgentRPC
-from openai import OpenAI
+# First register your functions with AgentRPC (Locally or on another machine)
 
-openai = OpenAI(api_key="YOUR_OPENAI_API_KEY")
-rpc = AgentRPC(api_secret="YOUR_API_SECRET")
+# Attach the tools to the Agent
+agent = Agent(name="AgentRPC Agent", tools=agentrpc.openai.agents.get_tools())
 
-# Get tools formatted for OpenAI
-tools = rpc.openai.get_tools()
-
-# Use tools with OpenAI
-completion = openai.chat.completions.create(
-    model="gpt-4o",
-    messages=[{"role": "user", "content": "What's the weather in San Francisco?"}],
-    tools=tools,
+result = await Runner.run(
+    agent,
+    input="What is the weather in Melbourne?",
 )
 
-# Execute tool calls
-if completion.choices[0].message.tool_calls:
-    for tool_call in completion.choices[0].message.tool_calls:
-        result = rpc.openai.execute_tool(tool_call)
-        # Use the result...
-``` 
+print(result.final_output)
+
+```
+
+### Completions SDK
+#### `rpc.openai.completions.get_tools()`
+
+The `get_tools()` method returns your registered AgentRPC functions formatted as OpenAI tools, ready to be passed to OpenAI's API.
+
+```python
+# First register your functions with AgentRPC (Locally or on another machine)
+
+# Then get the tools formatted for OpenAI
+tools = agentrpc.openai.completions.get_tools()
+
+# Pass these tools to OpenAI
+chat_completion = openai.chat.completions.create(
+  model="gpt-4-1106-preview",
+  messages=messages,
+  tools=tools,
+  tool_choice="auto"
+)
+```
+
+#### `rpc.openai.completions.execute_tool(tool_call)`
+
+The `execute_tool()` method executes an OpenAI tool call against your registered AgentRPC functions.
+
+```python
+# Process tool calls from OpenAI's response
+if chat_completion.choices[0].tool_calls:
+  for tool_call in response_message.tool_calls:
+    rpc.openai.completions.execute_tool(tool_call)
+```
+
+For more details, visit the [Python SDK GitHub repository](https://github.com/agentrpc/agentrpc/tree/main/sdk-python).

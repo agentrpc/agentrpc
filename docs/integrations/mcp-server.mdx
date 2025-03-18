@@ -11,7 +11,7 @@ MCP enables developers to build secure, two-way connections between their data s
 The TypeScript SDK includes an MCP server that can be started using:
 
 ```bash
-npx agentrpc mcp <YOUR_API_SECRET>
+AGENTRPC_API_SECRET <YOUR_API_SECRET> npx agentrpc mcp
 ```
 
 This allows you to connect your data sources to AI assistants like Claude, enabling them to access relevant information and produce better responses.
@@ -20,27 +20,7 @@ This allows you to connect your data sources to AI assistants like Claude, enabl
 
 Here are some examples of how to configure your MCP server for different MCP clients.
 
-### Claude
-
-```json
-{
-  "mcpServers": {
-    "agentrpc": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "agentrpc",
-        "mcp"
-      ],
-      "env": {
-        "AGENTRPC_API_SECRET": "<YOUR_API_SECRET>"
-      }
-    }
-  }
-}
-```
-
-### Cursor
+### Claude Desktop / Cursor Configuration
 
 ```json
 {

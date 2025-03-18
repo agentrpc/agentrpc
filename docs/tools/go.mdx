@@ -32,29 +32,31 @@ func main() {
     panic(err)
   }
 
-  err = rpc.Register(agentrpc.Tool{
-    Handler: func(input map[string]interface{}) (interface{}, error) {
+  rpc.Register(agentrpc.Tool{
+    Handler: func(input map[string]interface{}) string {
       name, ok := input["name"].(string)
       if !ok {
         return nil, fmt.Errorf("name must be a string")
       }
-      return fmt.Sprintf("Hello %s", name), nil
+      return fmt.Sprintf("Hello %s", name)
     },
     Name:        "SayHello",
     Description: "A simple greeting function",
   })
-  if err != nil {
-    panic(err)
-  }
 
-  err = rpc.Listen()
-  if err != nil {
-    panic(err)
-  }
+  go func() {
+    client.Listen()
+  }()
+
+  sigChan := make(chan os.Signal, 1)
+  signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
+
+  <-sigChan
+  defer rpc.Unlisten()
 
   // To stop listening
   // rpc.Unlisten()
 }
 ```
 
-For more details, visit the [Go SDK GitHub repository](https://github.com/agentrpc/agentrpc/tree/main/sdk-go). 
+For more details, visit the [Go SDK GitHub repository](https://github.com/agentrpc/agentrpc/tree/main/sdk-go).
