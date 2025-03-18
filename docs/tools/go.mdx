@@ -3,6 +3,7 @@ title: 'Go SDK'
 description: 'Register tools with the Go SDK'
 icon: 'golang'
 ---
+import RegisterGo from '/snippets/register-go.mdx';
 
 The Go SDK provides a clean interface for registering functions as tools for AI agents.
 
@@ -14,49 +15,6 @@ go get github.com/agentrpc/agentrpc/sdk-go
 
 ## Basic Usage
 
-```go
-package main
-
-import (
-  "context"
-  "fmt"
-
-  "github.com/agentrpc/agentrpc/sdk-go"
-)
-
-func main() {
-  rpc, err := agentrpc.New(agentrpc.Options{
-    APISecret: "YOUR_API_SECRET",
-  })
-  if err != nil {
-    panic(err)
-  }
-
-  rpc.Register(agentrpc.Tool{
-    Handler: func(input map[string]interface{}) string {
-      name, ok := input["name"].(string)
-      if !ok {
-        return nil, fmt.Errorf("name must be a string")
-      }
-      return fmt.Sprintf("Hello %s", name)
-    },
-    Name:        "SayHello",
-    Description: "A simple greeting function",
-  })
-
-  go func() {
-    client.Listen()
-  }()
-
-  sigChan := make(chan os.Signal, 1)
-  signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
-
-  <-sigChan
-  defer rpc.Unlisten()
-
-  // To stop listening
-  // rpc.Unlisten()
-}
-```
+<RegisterGo />
 
 For more details, visit the [Go SDK GitHub repository](https://github.com/agentrpc/agentrpc/tree/main/sdk-go).
