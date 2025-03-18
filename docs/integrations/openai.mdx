@@ -4,36 +4,22 @@ description: 'Connect OpenAI models to your AgentRPC tools'
 icon: 'circle'
 ---
 
-You can use the `rpc.OpenAI` object to get tools formatted for the OpenAI SDK.
-
-## TypeScript/JavaScript
-
-```typescript
-// Get tools formatted for OpenAI
-const tools = await rpc.OpenAI.getTools();
-
-// Pass these tools to OpenAI
-const chatCompletion = await openai.chat.completions.create({
-  model: "gpt-4o",
-  messages: messages,
-  tools: tools,
-  tool_choice: "auto",
-});
-
-const responseMessage = completion.choices[0]?.message;
-
-// Execute tool calls from OpenAI's response
-if (responseMessage.tool_calls && responseMessage.tool_calls.length > 0) {
-  for (const toolCall of responseMessage.tool_calls) {
-    const result = await rpc.OpenAI.executeTool(toolCall);
-    // Use the result...
-  }
-}
-```
+<iframe
+  src="https://player.vimeo.com/video/1066820347?h=6bbf54c9ef"
+  frameBorder="0"
+  height="500"
+  className="w-full aspect-video"
+  allowFullScreen
+  webkitallowfullscreen
+  mozallowfullscreen
+  title="AgentRPC - Open AI Agents SDK Setup"
+/>
 
 ## Python
 
 ### Agents SDK
+
+Connect AgentRPC tools to the [OpenAI Agents SDK](https://github.com/openai/openai-agents-python).
 
 #### `rpc.openai.agents.get_tools()`
 
@@ -43,7 +29,7 @@ The `get_tools()` method returns your registered AgentRPC functions as OpenAI Ag
 # First register your functions with AgentRPC (Locally or on another machine)
 
 # Attach the tools to the Agent
-agent = Agent(name="AgentRPC Agent", tools=agentrpc.openai.agents.get_tools())
+agent = Agent(name="AgentRPC Agent", tools=rpc.openai.agents.get_tools())
 
 result = await Runner.run(
     agent,
@@ -55,6 +41,9 @@ print(result.final_output)
 ```
 
 ### Completions SDK
+
+Connect AgentRPC tools to the [OpenAI Completions SDK](https://github.com/openai/openai-python).
+
 #### `rpc.openai.completions.get_tools()`
 
 The `get_tools()` method returns your registered AgentRPC functions formatted as OpenAI tools, ready to be passed to OpenAI's API.
@@ -63,7 +52,7 @@ The `get_tools()` method returns your registered AgentRPC functions formatted as
 # First register your functions with AgentRPC (Locally or on another machine)
 
 # Then get the tools formatted for OpenAI
-tools = agentrpc.openai.completions.get_tools()
+tools = rpc.openai.completions.get_tools()
 
 # Pass these tools to OpenAI
 chat_completion = openai.chat.completions.create(
@@ -86,3 +75,34 @@ if chat_completion.choices[0].tool_calls:
 ```
 
 For more details, visit the [Python SDK GitHub repository](https://github.com/agentrpc/agentrpc/tree/main/sdk-python).
+
+## TypeScript
+
+Connect AgentRPC tools to the [OpenAI Completions SDK](https://github.com/openai/openai-node).
+
+You can use the `rpc.OpenAI` object to get tools formatted for the OpenAI Completions SDK.
+
+```typescript
+// Get tools formatted for OpenAI completions SDK
+const tools = await rpc.OpenAI.getTools();
+
+// Pass these tools to OpenAI
+const completion = await openai.chat.completions.create({
+  model: "gpt-4o",
+  messages: messages,
+  tools: tools,
+  tool_choice: "auto",
+});
+
+const responseMessage = completion.choices[0]?.message;
+
+// Execute tool calls from OpenAI's response
+if (responseMessage.tool_calls && responseMessage.tool_calls.length > 0) {
+  for (const toolCall of responseMessage.tool_calls) {
+    const result = await rpc.OpenAI.executeTool(toolCall);
+    // Use the result...
+  }
+}
+```
+
+For more details, visit the [NodeJS SDK GitHub repository](https://github.com/agentrpc/agentrpc/tree/main/sdk-node).
