@@ -3,7 +3,6 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 from agentrpc import AgentRPC
-from agentrpc.openai import OpenAIIntegration
 
 # Load environment variables from .env file
 dotenv_path = Path(__file__).parent.parent / ".env"
@@ -20,13 +19,12 @@ def test_client_init():
     assert client._AgentRPC__api_secret == api_secret
     assert client._AgentRPC__endpoint == api_endpoint
     assert client._AgentRPC__http_client is not None
-    assert isinstance(rpc.OpenAI, OpenAIIntegration)
 
 
 def test_client_openai_completions_get_tools():
     """Test client initialization."""
-    client = AgentRPC(api_secret, api_endpoint)
-    tools = rpc.OpenAI.completions.get_tools()
+    rpc = AgentRPC(api_secret, api_endpoint)
+    tools = rpc.openai.completions.get_tools()
     print(tools)
 
 

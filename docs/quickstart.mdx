@@ -3,11 +3,11 @@ title: 'Quickstart'
 description: 'Get started with AgentRPC in minutes'
 icon: 'rocket'
 ---
-import RegisterNode from '/snippets/register-node.mdx';
-import RegisterGo from '/snippets/register-go.mdx';
+import RegisterNode from '/snippets/node-register.mdx';
+import RegisterGo from '/snippets/go-register.mdx';
 
-import OpenAIAGents from '/snippets/openai-agents-python.mdx';
-import OpenAICompletions from '/snippets/openai-completions-python.mdx';
+import OpenAIAGents from '/snippets/python-openai-agents.mdx';
+import OpenAICompletions from '/snippets/node-openai-completions.mdx';
 
 <iframe
   src="https://player.vimeo.com/video/1066820347?h=6bbf54c9ef"
@@ -55,13 +55,15 @@ For more detailed examples, check out the SDK repositories:
 ### 3. Connect to an Agent
 
 <Tabs>
-  <Tab title="OpenAI Agents SDK">
-    <OpenAIAGents />
-  </Tab>
   <Tab title="OpenAI Completions SDK">
     <OpenAICompletions />
   </Tab>
+  <Tab title="OpenAI Agents SDK">
+    <OpenAIAGents />
+  </Tab>
   <Tab title="Claude MCP">
+    Add the following to your `claude_desktop_config.json`:
+
     ```json
     {
       "mcpServers": {
@@ -75,8 +77,12 @@ For more detailed examples, check out the SDK repositories:
       }
     }
     ```
+
+  [More details](https://modelcontextprotocol.io/quickstart/user)
   </Tab>
   <Tab title="Claude Cursor">
+    Add the following to your `~/.cursor/mcp.json`:
+
     ```json
     {
       "mcpServers": {
@@ -90,6 +96,8 @@ For more detailed examples, check out the SDK repositories:
       }
     }
     ```
+
+    [More details](https://docs.cursor.com/context/model-context-protocol#configuring-mcp-servers)
   </Tab>
 </Tabs>
 

@@ -1,0 +1,22 @@
+{
+  "name": "examples",
+  "author": "AgentRPC",
+  "dependencies": {
+    "agentrpc": "^0.0.14"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.3",
+    "@types/node": "^20.11.19",
+    "prettier": "^3.2.5",
+    "eslint": "^8.56.0",
+    "@typescript-eslint/parser": "^7.0.1",
+    "@typescript-eslint/eslint-plugin": "^7.0.1"
+  },
+  "scripts": {
+    "build": "tsc",
+    "format": "prettier --write \"**/*.{ts,js,json}\"",
+    "format:check": "prettier --check \"**/*.{ts,js,json}\"",
+    "lint": "eslint \"**/*.{ts,js}\" --fix",
+    "lint:check": "eslint \"**/*.{ts,js}\""
+  }
+}

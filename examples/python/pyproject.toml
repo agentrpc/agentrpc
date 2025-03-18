@@ -1,0 +1,31 @@
+[project]
+name = "examples"
+version = "0.1.0"
+description = "AgentRPC Python examples"
+requires-python = ">=3.9"
+dependencies = [
+    "agentrpc>=0.0.7",
+    "openai>=1.66.5",
+]
+
+[project.optional-dependencies]
+dev = [
+    "ruff>=0.3.0",
+    "python-dotenv>=1.0.0",
+]
+
+[tool.ruff]
+target-version = "py38"
+line-length = 88
+
+[tool.ruff.lint]
+select = ["E", "F", "B", "I", "W"]
+ignore = []
+
+[tool.ruff.lint.isort]
+known-first-party = ["examples"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "auto"
