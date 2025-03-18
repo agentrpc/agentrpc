@@ -3,6 +3,12 @@ title: 'Quickstart'
 description: 'Get started with AgentRPC in minutes'
 icon: 'rocket'
 ---
+import RegisterNode from '/snippets/register-node.mdx';
+import RegisterGo from '/snippets/register-go.mdx';
+
+import OpenAIAGents from '/snippets/openai-agents-python.mdx';
+import OpenAICompletions from '/snippets/openai-completions-python.mdx';
+
 <iframe
   src="https://player.vimeo.com/video/1066820347?h=6bbf54c9ef"
   frameBorder="0"
@@ -13,7 +19,6 @@ icon: 'rocket'
   mozallowfullscreen
   title="AgentRPC - Open AI Agents SDK Setup"
 />
-
 
 ### 1. Get an API Key
 
@@ -35,74 +40,10 @@ Choose your preferred language to register a tool with AgentRPC:
 
 <Tabs>
   <Tab title="TypeScript">
-    ```typescript
-    import { AgentRPC } from "agentrpc";
-    import { z } from "zod";
-
-    const rpc = new AgentRPC({
-      apiSecret: "YOUR_API_SECRET",
-    });
-
-    rpc.register({
-      name: "getWeather",
-      description: "Return weather information at a given location",
-      schema: z.object({ location: z.string() }),
-      handler: async ({ location }) => {
-        // Implementation details
-        const data = await fetchWeatherData(location);
-        return data;
-      }
-    });
-
-    await rpc.listen();
-    ```
+    <RegisterNode />
   </Tab>
   <Tab title="Go">
-    ```go
-    package main
-
-    import (
-      "context"
-      "fmt"
-
-      "github.com/agentrpc/agentrpc/sdk-go"
-    )
-
-    func main() {
-      rpc := agentrpc.New(agentrpc.Options{
-        APISecret: "YOUR_API_SECRET",
-      })
-
-      rpc.Register(agentrpc.Tool{
-        Name:        "getWeather",
-        Description: "Return weather information at a given location",
-        Handler: func(input struct{ location string }) string {
-          location, ok := params["location"].(string)
-          if !ok {
-            return nil, fmt.Errorf("location must be a string")
-          }
-
-          // Implementation details
-          data, err := fetchWeatherData(location)
-          if err != nil {
-            return nil, err
-          }
-
-          return data, nil
-          },
-      })
-
-      go func() {
-        rpc.Listen()
-      }()
-
-      sigChan := make(chan os.Signal, 1)
-      signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
-
-      <-sigChan
-      defer rpc.Unlisten()
-    }
-    ```
+    <RegisterGo />
   </Tab>
 </Tabs>
 
@@ -115,57 +56,10 @@ For more detailed examples, check out the SDK repositories:
 
 <Tabs>
   <Tab title="OpenAI Agents SDK">
-    ```python
-    from agentrpc import AgentRPC
-    from agents import Agent, Runner
-    import asyncio
-    import os
-
-
-    async def main():
-        agentrpc = AgentRPC(api_secret=os.environ.get("AGENTRPC_API_SECRET", ""))
-        agent = Agent(name="AgentRPC Agent", tools=agentrpc.openai.agents.get_tools())
-
-        result = await Runner.run(
-            agent,
-            input="What is the weather in Melbourne?",
-        )
-        print(result.final_output)
-
-
-    if __name__ == "__main__":
-        asyncio.run(main())
-    ```
+    <OpenAIAGents />
   </Tab>
   <Tab title="OpenAI Completions SDK">
-    ```python
-    from agentrpc import AgentRPC
-    from openai import OpenAI
-    import os
-
-
-    def main():
-        agentrpc = AgentRPC(api_secret=os.environ.get("AGENTRPC_API_SECRET", ""))
-        openai = OpenAI()
-
-        tools = agentrpc.openai.completions.get_tools()
-
-        completion = openai.chat.completions.create(
-            model="gpt-4o",
-            messages=[{"role": "user", "content": "What is the weather in Melbourne?"}],
-            tools=tools,
-        )
-
-        if completion.choices[0].message.tool_calls:
-            for tool_call in completion.choices[0].message.tool_calls:
-                print("Agent is calling Tool", tool_call.function.name)
-                result = agentrpc.openai.completions.execute_tool(tool_call)
-                print(result)
-
-
-    if __name__ == "__main__":
-        main()
-    ```
+    <OpenAICompletions />
   </Tab>
   <Tab title="Claude MCP">
     ```json
@@ -173,11 +67,7 @@ For more detailed examples, check out the SDK repositories:
       "mcpServers": {
         "agentrpc": {
           "command": "npx",
-          "args": [
-            "-y",
-            "agentrpc",
-            "mcp"
-          ],
+          "args": ["-y", "agentrpc", "mcp"],
           "env": {
             "AGENTRPC_API_SECRET": "<YOUR_API_SECRET>"
           }

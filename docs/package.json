@@ -3,10 +3,11 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "mintlify dev",
-    "build": "mintlify build"
+    "dev": "npm run generate:snippets && mintlify dev",
+    "generate:snippets": "tsx ./scripts/generate-snippets.ts"
   },
   "devDependencies": {
+    "glob": "^11.0.1",
     "mintlify": "^4.0.0"
   }
 }
