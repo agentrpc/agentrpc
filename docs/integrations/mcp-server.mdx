@@ -16,11 +16,20 @@ AGENTRPC_API_SECRET <YOUR_API_SECRET> npx agentrpc mcp
 
 This allows you to connect your data sources to AI assistants like Claude, enabling them to access relevant information and produce better responses.
 
-## Configuration Examples
+## Cursor
 
-Here are some examples of how to configure your MCP server for different MCP clients.
+<iframe
+  src="https://player.vimeo.com/video/1066820406?h=44a15842e0"
+  height="500"
+  className="w-full aspect-video"
+  frameBorder="0"
+  allowFullScreen
+  webkitallowfullscreen
+  mozallowfullscreen
+  title="AgentRPC - Cursor MCP Setup"
+/>
 
-### Claude Desktop / Cursor Configuration
+Add the following to your `~/.cursor/mcp.json`:
 
 ```json
 {
@@ -35,3 +44,36 @@ Here are some examples of how to configure your MCP server for different MCP cli
   }
 }
 ```
+
+[More details](https://docs.cursor.com/context/model-context-protocol#configuring-mcp-servers)
+
+## Claude Desktop
+
+<iframe
+  src="https://player.vimeo.com/video/1066820186?h=88d81fddf6"
+  frameBorder="0"
+  className="w-full aspect-video"
+  height="500"
+  allowFullScreen
+  webkitallowfullscreen
+  mozallowfullscreen
+  title="AgentRPC - Claude MCP Setup"
+/>
+
+Add the following to your `claude_desktop_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "agentrpc": {
+      "command": "npx",
+      "args": ["-y", "agentrpc", "mcp"],
+      "env": {
+        "AGENTRPC_API_SECRET": "<YOUR_API_SECRET>"
+      }
+    }
+  }
+}
+```
+
+[More details](https://modelcontextprotocol.io/quickstart/user)
