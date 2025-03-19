@@ -113,6 +113,14 @@ func (s *pollingAgent) Register(fn Tool) error {
 
 // Start polling for jobs, registers the machine, and starts polling for messages
 func (s *pollingAgent) Listen() error {
+	if len(s.Tools) == 0 {
+		return fmt.Errorf("no tools registered")
+	}
+
+	if len(s.Tools) > 30 {
+		return fmt.Errorf("SDK does not support more than 30 tools currently")
+	}
+
 	_, err := s.inferable.registerMachine(s)
 	if err != nil {
 		return fmt.Errorf("failed to register machine: %v", err)

@@ -194,6 +194,18 @@ export class AgentRPC {
       throw new AgentRPCError("Tools already listening");
     }
 
+    const tools = Object.values(this.toolsRegistry);
+
+    if (tools.length === 0) {
+      throw new AgentRPCError("No tools registered");
+    }
+
+    if (tools.length > 30) {
+      throw new AgentRPCError(
+        "SDK does not support more than 30 tools currently",
+      );
+    }
+
     // TODO: Create one polling agent per 10 tools
     const agent = new PollingAgent({
       endpoint: this.endpoint,
