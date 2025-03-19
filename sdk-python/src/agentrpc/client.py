@@ -22,6 +22,9 @@ class AgentRPC:
         self.__http_client = HTTPClient(endpoint, api_secret)
         self.openai = OpenAIIntegration(self)
 
+        # log secret
+        print(f"API Secret: {api_secret}")
+
         parts = api_secret.split("_")
         if len(parts) != 3 or parts[0] != "sk":
             raise ValueError("Invalid API Secret.")

@@ -8,31 +8,41 @@ from agentrpc.openai import OpenAIIntegration
 # Load environment variables from .env file
 dotenv_path = Path(__file__).parent.parent / ".env"
 load_dotenv(dotenv_path=dotenv_path)
-api_secret = os.environ.get("INFERABLE_TEST_API_SECRET", "test_secret")
-api_endpoint = os.environ.get("INFERABLE_TEST_API_ENDPOINT", "https://api.agentrpc.com")
+
+# Validate required environment variables
+required_env_vars = ["INFERABLE_TEST_API_SECRET", "INFERABLE_TEST_API_ENDPOINT"]
+missing_vars = [var for var in required_env_vars if not os.environ.get(var)]
+if missing_vars:
+    raise EnvironmentError(
+        f"Missing required environment variables: {', '.join(missing_vars)}. "
+        "Please set these variables in your .env file."
+    )
+
+api_secret = os.environ.get("INFERABLE_TEST_API_SECRET")
+api_endpoint = os.environ.get("INFERABLE_TEST_API_ENDPOINT")
 
 
 def test_client_init():
     """Test client initialization."""
-    client = AgentRPC(api_secret, api_endpoint)
+    rpc = AgentRPC(api_secret, api_endpoint)
 
     # Check that properties are set correctly
-    assert client._AgentRPC__api_secret == api_secret
-    assert client._AgentRPC__endpoint == api_endpoint
-    assert client._AgentRPC__http_client is not None
-    assert isinstance(rpc.OpenAI, OpenAIIntegration)
+    assert rpc._AgentRPC__api_secret == api_secret
+    assert rpc._AgentRPC__endpoint == api_endpoint
+    assert rpc._AgentRPC__http_client is not None
+    assert isinstance(rpc.openai, OpenAIIntegration)
 
 
 def test_client_openai_completions_get_tools():
     """Test client initialization."""
-    client = AgentRPC(api_secret, api_endpoint)
-    tools = rpc.OpenAI.completions.get_tools()
+    rpc = AgentRPC(api_secret, api_endpoint)
+    tools = rpc.openai.completions.get_tools()
     print(tools)
 
 
 # def test_client_openai_execute_tool():
 #     """Test executing ."""
-#     client = AgentRPC(api_secret, api_endpoint)
+#     rpc = AgentRPC(api_secret, api_endpoint)
 #     function_call = FunctionCall(name="hello", arguments='{"name": "agent"}')
-#     result = rpc.OpenAI.execute_tool(function_call)
+#     result = rpc.openai.execute_tool(function_call)
 #     print(result)
