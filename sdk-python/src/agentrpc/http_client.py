@@ -63,23 +63,7 @@ class HTTPClient:
         function_name: Optional[str] = None,
         tool_name: Optional[str] = None,
         input_data: Dict[str, Any] = None,
-        wait_time: int = 0,
     ) -> Dict[str, Any]:
-        """Create a job with the AgentRPC API.
-
-        Args:
-            cluster_id: The cluster ID.
-            function_name: The function name.
-            tool_name: The tool name.
-            input_data: The input data.
-            wait_time: How long to wait for job completion (0-20 seconds).
-
-        Returns:
-            The API response.
-
-        Raises:
-            AgentRPCError: If the request fails.
-        """
         if not function_name and not tool_name:
             raise AgentRPCError("Either function or tool must be provided")
 
@@ -90,9 +74,9 @@ class HTTPClient:
         if tool_name:
             payload["tool"] = tool_name
 
-        query_params = {}
-        if wait_time > 0:
-            query_params["waitTime"] = str(min(wait_time, 20))  # Max 20 seconds
+        query_params = {
+            "waitTime": "20",
+        }
 
         try:
             return self.post(
@@ -102,20 +86,13 @@ class HTTPClient:
             raise AgentRPCError(f"Failed to create job: {str(e)}")
 
     def get_job(self, cluster_id: str, job_id: str) -> Dict[str, Any]:
-        """Get job details from the AgentRPC API.
-
-        Args:
-            cluster_id: The cluster ID.
-            job_id: The job ID.
-
-        Returns:
-            The job details.
-
-        Raises:
-            AgentRPCError: If the request fails.
-        """
         try:
-            response = self.get(f"/clusters/{cluster_id}/jobs/{job_id}")
+            query_params = {
+                "waitTime": "20",
+            }
+            response = self.get(
+                f"/clusters/{cluster_id}/jobs/{job_id}", params=query_params
+            )
             return {"status": 200, "body": response}
         except Exception as e:
             raise AgentRPCError(f"Failed to get job details: {str(e)}")
@@ -129,22 +106,6 @@ class HTTPClient:
         initial_result_type: str = "rejection",
         poll_interval: float = 1.0,
     ) -> Dict[str, str]:
-        """Poll for job completion.
-
-        Args:
-            cluster_id: The cluster ID.
-            job_id: The job ID.
-            initial_status: The initial job status.
-            initial_result: The initial job result.
-            initial_result_type: The initial job result type.
-            poll_interval: How often to poll for updates.
-
-        Returns:
-            The final job status, result, and result type.
-
-        Raises:
-            AgentRPCError: If the request fails.
-        """
         status = initial_status
         result = initial_result
         result_type = initial_result_type
@@ -187,7 +148,6 @@ class HTTPClient:
             cluster_id=cluster_id,
             tool_name=tool_name,
             input_data=input_data,
-            wait_time=20,  # Maximum wait time
         )
 
         # Poll for completion

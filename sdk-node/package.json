@@ -1,6 +1,6 @@
 {
   "name": "agentrpc",
-  "version": "0.0.14",
+  "version": "0.0.15",
   "description": "Node SDK for AgentRPC",
   "main": "bin/index.js",
   "bin": {
