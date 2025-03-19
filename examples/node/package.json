@@ -2,7 +2,7 @@
   "name": "examples",
   "author": "AgentRPC",
   "dependencies": {
-    "agentrpc": "^0.0.14",
+    "agentrpc": "^0.0.16",
     "openai": "^4.87.4"
   },
   "devDependencies": {

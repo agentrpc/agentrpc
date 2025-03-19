@@ -4,7 +4,7 @@ requires-python = ">=3.9"
 
 [[package]]
 name = "agentrpc"
-version = "0.0.7"
+version = "0.0.8"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "build" },
@@ -12,9 +12,9 @@ dependencies = [
     { name = "openai-agents" },
     { name = "requests" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/47/0d/4951e801147828fc7052a81b05a801f6d6c06137fb566098ef4e98efdaa9/agentrpc-0.0.7.tar.gz", hash = "sha256:dbbe9a3874e17cbd441460b63cffba4c342b2b0bd190628b626240038d3fba9e", size = 7149 }
+sdist = { url = "https://files.pythonhosted.org/packages/9b/e9/662c4a28bf5a54f02ead78bc33020b9e3a7d68b60f61a8c1ff825ecd47f1/agentrpc-0.0.8.tar.gz", hash = "sha256:5a37bdac464c04c076234a77c43bf31dbbacf6d26bb13c6132ff35d2cdc96195", size = 7064 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/31/30/232aafe8815f7c361def2eb05b2eaa5a63d1b098167c319ca62a5980a6b6/agentrpc-0.0.7-py3-none-any.whl", hash = "sha256:9cf8969ef6ce497b2576a91b91e61c19d54f25a60a54ef435f2c13b832ed0eb9", size = 6569 },
+    { url = "https://files.pythonhosted.org/packages/88/e0/8d68a8a6675376faddc248e36c8cd3c9ecdf548d980191583557e63fd3f7/agentrpc-0.0.8-py3-none-any.whl", hash = "sha256:68d59eb77581483b7a39b522c19bab215817fa8cd182b7b19f53d8c20e35929a", size = 6433 },
 ]
 
 [[package]]
@@ -175,7 +175,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "agentrpc", specifier = ">=0.0.7" },
+    { name = "agentrpc", specifier = ">=0.0.8" },
     { name = "openai", specifier = ">=1.66.5" },
     { name = "python-dotenv", marker = "extra == 'dev'", specifier = ">=1.0.0" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.3.0" },

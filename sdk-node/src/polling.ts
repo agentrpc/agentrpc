@@ -8,7 +8,7 @@ import { ToolRegistrationInput } from "./types";
 import { isZodType, validateFunctionArgs } from "./util";
 import zodToJsonSchema from "zod-to-json-schema";
 
-const DEFAULT_RETRY_AFTER_SECONDS = 10;
+const DEFAULT_RETRY_AFTER_SECONDS = 0;
 
 export const log = debug("agentrpc:client:polling-agent");
 
