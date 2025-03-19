@@ -68,11 +68,11 @@ Creates a new AgentRPC client.
 
 #### Config Options:
 
-| Option       | Type   | Default                    | Description          |
-|-------------|--------|----------------------------|----------------------|
-| `APISecret` | string | **Required**               | The API secret key.  |
-| `Endpoint`  | string | `https://api.agentrpc.com` | Custom API endpoint. |
-| `MachineID` | string | Automatically generated    | Custom machine ID.   |
+| Option         | Type   | Default                    | Description          |
+|----------------|--------|----------------------------|----------------------|
+| `APISecret`    | string | **Required**               | The API secret key.  |
+| `APIEndpoint`  | string | `https://api.agentrpc.com` | Custom API endpoint. |
+| `MachineID`    | string | Automatically generated    | Custom machine ID.   |
 
 ### `rpc.Register(tool Tool)`
 

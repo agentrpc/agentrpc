@@ -89,6 +89,16 @@ export const definition = {
       clusterId: z.string(),
       jobId: z.string(),
     }),
+    query: z.object({
+      waitTime: z.coerce
+        .number()
+        .min(0)
+        .max(20)
+        .default(0)
+        .describe(
+          "Time in seconds to keep the request open waiting for a response",
+        ),
+    }),
     responses: {
       200: z.object({
         id: z.string(),
@@ -96,7 +106,7 @@ export const definition = {
         targetFn: z.string(),
         executingMachineId: z.string().nullable(),
         targetArgs: z.string(),
-        result: z.string().nullable(),
+        result: z.any().nullable(),
         resultType: z.string().nullable(),
         createdAt: z.date(),
         approved: z.boolean().nullable(),

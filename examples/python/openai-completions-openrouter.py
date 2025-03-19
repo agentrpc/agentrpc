@@ -5,13 +5,15 @@ from openai import OpenAI
 
 
 def main():
-    agentrpc = AgentRPC(api_secret=os.environ.get("AGENTRPC_API_SECRET", ""))
+    rpc = AgentRPC(
+        api_secret=os.environ.get("AGENTRPC_API_SECRET", ""),
+    )
     openai = OpenAI(
         base_url="https://openrouter.ai/api/v1",
         api_key=os.environ.get("OPENROUTER_API_KEY", ""),
     )
 
-    tools = agentrpc.openai.completions.get_tools()
+    tools = rpc.openai.completions.get_tools()
 
     completion = openai.chat.completions.create(
         model="google/gemini-2.0-flash-001",
@@ -22,7 +24,7 @@ def main():
     if completion.choices[0].message.tool_calls:
         for tool_call in completion.choices[0].message.tool_calls:
             print("Agent is calling Tool", tool_call.function.name)
-            result = agentrpc.openai.completions.execute_tool(tool_call)
+            result = rpc.openai.completions.execute_tool(tool_call)
             print(result)
 
 

@@ -6,8 +6,11 @@ from agents import Agent, Runner
 
 
 async def main():
-    agentrpc = AgentRPC(api_secret=os.environ.get("AGENTRPC_API_SECRET", ""))
-    agent = Agent(name="AgentRPC Agent", tools=agentrpc.openai.agents.get_tools())
+    rpc = AgentRPC(
+        api_secret=os.environ.get("AGENTRPC_API_SECRET", ""),
+    )
+
+    agent = Agent(name="AgentRPC Agent", tools=rpc.openai.agents.get_tools())
 
     result = await Runner.run(
         agent,

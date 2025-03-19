@@ -8,7 +8,7 @@ import { ToolRegistrationInput } from "./types";
 import { isZodType, validateFunctionArgs } from "./util";
 import zodToJsonSchema from "zod-to-json-schema";
 
-const DEFAULT_RETRY_AFTER_SECONDS = 10;
+const DEFAULT_RETRY_AFTER_SECONDS = 0;
 
 export const log = debug("agentrpc:client:polling-agent");
 
@@ -269,19 +269,6 @@ export const registerMachine = async (
   };
 };
 
-/**
- * Poll for job completion until it reaches a terminal state.
- * This is shared logic used by both MCP and OpenAI function bindings.
- *
- * @param client - The API client instance
- * @param clusterId - The cluster ID
- * @param jobId - The job ID to poll
- * @param initialStatus - Initial job status (if already known)
- * @param initialResult - Initial job result (if already known)
- * @param initialResultType - Initial result type (if already known)
- * @param pollInterval - Interval in ms between polling attempts (default: 1000ms)
- * @returns - The final job result with status, result content and resultType
- */
 export const pollForJobCompletion = async (
   client: ReturnType<typeof createApiClient>,
   clusterId: string,
@@ -299,10 +286,9 @@ export const pollForJobCompletion = async (
   let resultType: string = initialResultType;
 
   while (!status || !["failure", "done"].includes(status)) {
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-
     const details = await client.getJob({
       params: { clusterId, jobId },
+      query: { waitTime: 20 },
     });
 
     if (details.status !== 200) {
@@ -313,22 +299,13 @@ export const pollForJobCompletion = async (
     status = body.status;
     result = body.result || "";
     resultType = body.resultType || "rejection";
+
+    await new Promise((resolve) => setTimeout(resolve, 1000));
   }
 
   return { status: status as string, result, resultType };
 };
 
-/**
- * Create and execute a job with the given tool and input, polling for completion.
- *
- * @param client - The API client instance
- * @param clusterId - The cluster ID
- * @param toolName - The name of the tool to execute
- * @param input - The input arguments for the tool
- * @param waitTime - Server-side wait time in seconds (default: DEFAULT_WAIT_TIME_SECONDS)
- * @returns - The final job result with status, result content and resultType
- * @throws - Error if job creation or polling fails
- */
 export const createAndPollJob = async (
   client: ReturnType<typeof createApiClient>,
   clusterId: string,

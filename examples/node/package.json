@@ -2,15 +2,16 @@
   "name": "examples",
   "author": "AgentRPC",
   "dependencies": {
-    "agentrpc": "^0.0.14"
+    "agentrpc": "^0.0.16",
+    "openai": "^4.87.4"
   },
   "devDependencies": {
-    "typescript": "^5.3.3",
     "@types/node": "^20.11.19",
-    "prettier": "^3.2.5",
-    "eslint": "^8.56.0",
+    "@typescript-eslint/eslint-plugin": "^7.0.1",
     "@typescript-eslint/parser": "^7.0.1",
-    "@typescript-eslint/eslint-plugin": "^7.0.1"
+    "eslint": "^8.56.0",
+    "prettier": "^3.2.5",
+    "typescript": "^5.3.3"
   },
   "scripts": {
     "build": "tsc",

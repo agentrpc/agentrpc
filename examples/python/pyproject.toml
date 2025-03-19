@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "AgentRPC Python examples"
 requires-python = ">=3.9"
 dependencies = [
-    "agentrpc>=0.0.7",
+    "agentrpc>=0.0.8",
     "openai>=1.66.5",
 ]
 

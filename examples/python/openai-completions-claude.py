@@ -5,13 +5,15 @@ from openai import OpenAI
 
 
 def main():
-    agentrpc = AgentRPC(api_secret=os.environ.get("AGENTRPC_API_SECRET", ""))
+    rpc = AgentRPC(
+        api_secret=os.environ.get("AGENTRPC_API_SECRET", ""),
+    )
     openai = OpenAI(
         api_key=os.environ.get("ANTHROPIC_API_KEY", ""),
         base_url="https://api.anthropic.com/v1/",
     )
 
-    tools = agentrpc.openai.completions.get_tools()
+    tools = rpc.openai.completions.get_tools()
 
     completion = openai.chat.completions.create(
         model="claude-3-sonnet-20240229",
@@ -22,7 +24,7 @@ def main():
     if completion.choices[0].message.tool_calls:
         for tool_call in completion.choices[0].message.tool_calls:
             print("Agent is calling Tool", tool_call.function.name)
-            result = agentrpc.openai.completions.execute_tool(tool_call)
+            result = rpc.openai.completions.execute_tool(tool_call)
             print(result)
 
 

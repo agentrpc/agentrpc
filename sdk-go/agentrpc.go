@@ -13,7 +13,7 @@ import (
 )
 
 // Version of the AgentRPC package
-const Version = "0.0.5"
+const Version = "0.0.6"
 
 const (
 	// DefaultAPIEndpoint is the default endpoint for the AgentRPC API.

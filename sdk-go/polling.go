@@ -17,7 +17,7 @@ import (
 
 const (
 	MaxConsecutivePollFailures = 50
-	DefaultRetryAfter          = 10
+	DefaultRetryAfter          = 0
 )
 
 type Tool struct {
@@ -119,10 +119,10 @@ func (s *pollingAgent) Listen() error {
 	}
 
 	s.ctx, s.cancel = context.WithCancel(context.Background())
-	s.retryAfter = 0
+	s.retryAfter = DefaultRetryAfter
 
 	go func() {
-		failureCount := DefaultRetryAfter
+		failureCount := 0
 		for {
 			time.Sleep(time.Duration(s.retryAfter) * time.Second)
 
