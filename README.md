@@ -39,28 +39,23 @@ AgentRPC wraps your functions in a universal RPC interface, connecting them to a
 
 ## Getting Started
 
-### Quick Installation
+### Quick Start
 
-1. [Get your API key](https://app.agentrpc.com)
-2. Choose your preferred SDK:
-   - [Go SDK](sdk-go/README.md)
-   - [Node.js SDK](sdk-node/README.md)
-   - [Python SDK](sdk-python/README.md)
-3. Explore working examples in the [examples](./examples) directory
+Follow the [quick start](https://docs.agentrpc.com/quickstart) example on our docs site.
 
-## Integration Guides
+### Examples
 
-### MCP Server
+Explore working examples in the [examples](./examples) directory.
 
-The AgentRPC TypeScript SDK includes an MCP (Model Context Protocol) server:
+## MCP Server
+
+The AgentRPC TypeScript SDK includes an optional MCP (Model Context Protocol) server.
 
 ```sh
 ANGENTRPC_API_SECRET=YOUR_API_SECRET npx agentrpc mcp
 ```
 
 This launches an MCP-compliant server for external AI models to interact with your registered tools.
-
-For more details on MCP, visit [Model Context Protocol](https://modelcontextprotocol.io/introduction).
 
 ### Claude Desktop Integration
 
