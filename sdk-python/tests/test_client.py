@@ -10,7 +10,7 @@ dotenv_path = Path(__file__).parent.parent / ".env"
 load_dotenv(dotenv_path=dotenv_path)
 
 # Validate required environment variables
-required_env_vars = ["INFERABLE_TEST_API_SECRET", "INFERABLE_TEST_API_ENDPOINT"]
+required_env_vars = ["AGENTRPC_API_SECRET"]
 missing_vars = [var for var in required_env_vars if not os.environ.get(var)]
 if missing_vars:
     raise EnvironmentError(
@@ -18,8 +18,8 @@ if missing_vars:
         "Please set these variables in your .env file."
     )
 
-api_secret = os.environ.get("INFERABLE_TEST_API_SECRET")
-api_endpoint = os.environ.get("INFERABLE_TEST_API_ENDPOINT")
+api_secret = os.environ.get("AGENTRPC_API_SECRET")
+api_endpoint = os.environ.get("AGENTRPC_API_ENDPOINT", "https://api.agentrpc.com")
 
 
 def test_client_init():
