@@ -24,7 +24,7 @@
     "ajv-formats": "=3.0.1",
     "debug": "^4.3.4",
     "node-machine-id": "^1.1.12",
-    "openai": "^4.87.3",
+    "openai": "^6.1.0",
     "prettier": "^3.3.3",
     "zod": "^3.23.5",
     "zod-to-json-schema": "^3.23.5"
