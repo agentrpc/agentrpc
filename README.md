@@ -1,3 +1,5 @@
+[![MseeP.ai Security Assessment Badge](https://mseep.net/pr/agentrpc-agentrpc-badge.png)](https://mseep.ai/app/agentrpc-agentrpc)
+
 # AgentRPC
 
 ![NPM Version](https://img.shields.io/npm/v/agentrpc?color=32CD32) ![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/agentrpc/agentrpc?filename=sdk-go%2Fgo.mod&color=32CD32) ![PyPI - Python Version](https://img.shields.io/pypi/v/agentrpc?color=32CD32) ![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)
